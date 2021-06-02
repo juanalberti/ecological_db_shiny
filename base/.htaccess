@@ -1,0 +1,5 @@
+RewriteEngine on
+AuthName "Members Area"
+AuthType Basic
+AuthUserFile .htpasswd
+require valid-user 

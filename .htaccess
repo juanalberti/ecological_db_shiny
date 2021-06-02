@@ -1,0 +1,5 @@
+RewriteEngine on
+AuthName "Base de datos"
+AuthType Basic
+AuthUserFile /.htpasswd
+require valid-user 
