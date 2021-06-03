@@ -2,8 +2,8 @@ library(shiny)
 library(shinydashboard)
 library(shinyBS)
 
-
 source("../utils.R")
+source("../connection.R")
 
 shinyUI(
   dashboardPage(

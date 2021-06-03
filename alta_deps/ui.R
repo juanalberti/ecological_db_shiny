@@ -4,6 +4,7 @@ library(shinyBS)
 library(dqshiny)
 
 source("../utils.R")
+source("../connection.R")
 
 shinyUI(
   dashboardPage(

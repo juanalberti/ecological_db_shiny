@@ -6,6 +6,7 @@ library(dplyr)
 library(shinydashboard)
 
 source("../utils.R")
+source("../connection.R")
 
 shinyUI(
   dashboardPage(

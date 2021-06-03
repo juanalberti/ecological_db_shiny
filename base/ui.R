@@ -8,6 +8,7 @@ library(cowplot)
 library(forcats)
 
 source("../utils.R")
+source("../connection.R")
 
 shinyUI(dashboardPage(
   dashboardHeader(title = "Basic dashboard"),
