@@ -3,7 +3,7 @@
 ## Lateral panel (menu)
 Here we provide an explanation of the key features of a GUI designed to ease the interaction with the ecological database presented in a companion paper. This GUI allows users to insert, update, delete or visualize data.
 
-The GUI is organized using the _shiny_ [[1]](#1) and _shinydashboard_ [[2]](#2) packages. On the left side there is a lateral panel with the main menu of this GUI. 
+The GUI is organized using _shiny_ [[1]](#1) and _shinydashboard_ [[2]](#2) packages. On the left side there is a lateral panel with the main menu of this GUI. 
 
 ![Main menu](capturas/menu.png)
 
