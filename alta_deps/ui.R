@@ -64,61 +64,65 @@ shinyUI(
                 actionLink("submit_another", "Add another dependent variable")#, onclick ="location.href='../alta_deps/';")
               )
             )
-          ),
+          ), # sidebarpanel
           mainPanel(
             bsCollapse(id = "collapseExample", open = c("Information","To fill"),multiple=T,
+                       bsCollapsePanel("List of dependent variables", 
+                                       DT::dataTableOutput("depvars"), 
+                                       style = "primary"),
                        bsCollapsePanel("Information", 
-                                       DT::dataTableOutput("info")
-                                       , style = "warning"),
+                                       DT::dataTableOutput("info"), 
+                                       style = "warning"),
                        bsCollapsePanel("To fill",
                                        div(id="form",
                                            conditionalPanel("input.forma=='Manual'",
                                                             radioButtons("tipo", 
                                                                          "Type of dependent variable", 
                                                                          choices=c("With taxa", "Without taxa"),selected = character(0)),
+                                                            textInput("name", "Name"),
                                                             conditionalPanel("input.tipo == 'With taxa'",
-                                                                             radioButtons("sitaxa", "Type of living being", choices=NA, selected = character(0)),
-                                                                             textInput("name", "Name"),
+                                                                             radioButtons("sitaxa", "Type of living being", choices=trae_taxa_king()$kingdom, selected = character(0)),
                                                                              autocomplete_input("div", "Division", options=NA),
                                                                              autocomplete_input("fam", "Family", options=NA),
                                                                              autocomplete_input("gen", "Genus", options=NA),
                                                                              autocomplete_input("spec", "Species", options=NA),
+                                                                             autocomplete_input("var", "Variety", options=NA),
                                                                              autocomplete_input("fdevida", "Life form", options=NA),
                                                                              autocomplete_input("vida", "Life span", options=NA),
                                                                              autocomplete_input("proven", "Provenance", options=NA),
-                                                                             autocomplete_input("nlocal", "Local name", options=NA),
-                                                                             autocomplete_input("gf", "Functional group", options=NA),
-                                                                             textInput("mch", "Where found (separated by comma; i.e. Mar Chiquita, San Pablo)")
+                                                                             # autocomplete_input("nlocal", "Local name", options=NA),
+                                                                             autocomplete_input("gf", "Functional group", options=NA)
                                                             ),
                                                             conditionalPanel("input.tipo == 'Without taxa'",
-                                                                             radioButtons("notaxa", "Type of variable", choices=character(0),selected = character(0)),
+                                                                             # radioButtons("notaxa", "Type of variable", choices=character(0),selected = character(0)),
                                                                              tags$style(type='text/css', '#text1 {color: red;}'), 
-                                                                             h4(textOutput("text1")),
-                                                                             textInput("novivo", "Variable's name"),
-                                                                             textInput("otros", "Other data with the following structure:\n
-                                                                                       Variable_name:value,Other_variable_name:other_value")
-                                                                             )
+                                                                             h4(textOutput("text1"))
+                                                                             # textInput("novivo", "Variable's name"),
+                                                                             
                                                             ),
-                                           conditionalPanel("input.forma=='With supporting taxa file'",
-                                                            DT::dataTableOutput("masivo"),
-                                                            h4("If an empty table shows up, it is because all species are already registered"),
-                                                            hr(),
-                                                            h4("If the table shows correct information, you can proceed with the submission")
-                                           ),
-                                           actionButton("submit", "Submit", class = "btn-primary")
-                                           ),
+                                                            textInput("otros", "Other data with the following structure:\n
+                                                                                       Variable_name:value,Other_variable_name:other_value")
+                                           ) # conditionalpanel manual
+                                       ), # div form
+                                       conditionalPanel("input.forma=='With supporting taxa file'",
+                                                        DT::dataTableOutput("masivo"),
+                                                        h4("If an empty table shows up, it is because all species are already registered"),
+                                                        hr(),
+                                                        h4("If the table shows correct information, you can proceed with the submission")
+                                       ),
+                                       actionButton("submit", "Submit", class = "btn-primary"),
                                        shinyjs::hidden(
                                          span(id = "submit_msg", "Submitting..."),
                                          div(id = "error",
                                              div(br(), "Error: ", span(id = "error_msg"))
                                          )
                                        ),
-                                       style = "info")
-          ) 
-          )
-        )  
-      )
-    )
-    )
-)
+                                       style = "info") # bscollapse to fill
+                       ) # primer bscollapse
+          ) # mainpanel
+        ) # sidebarlayout
+      ) # fluidpage  
+    ) # dashboardbody
+  ) # dashboardpage
+) # shinyui
 

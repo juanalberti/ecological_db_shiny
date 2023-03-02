@@ -32,7 +32,8 @@ shinyUI(
                                  conditionalPanel(condition="input.factor=='new'",
                                                   textInput("n.fac", "New factor")),
                                  numericInput("num", "Number of new factor levels", 2, min = 1, max = 10, step = 1),
-                                 uiOutput(outputId = "out")),
+                                 uiOutput(outputId = "out"),
+                                 uiOutput(outputId = "detail")),
                 actionButton("submit", "Submit", class = "btn-primary"),
                 shinyjs::hidden(
                   span(id = "submit_msg", "Submitting"),

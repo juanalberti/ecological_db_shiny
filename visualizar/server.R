@@ -14,9 +14,9 @@ shinyServer(
     
     observe({
       # bring variable's types to exhibit in the checkbox
-      tv<-trae_id_tipo_valor()
+      td<-trae_tipo_dato()
       # update the checkbox
-      updateCheckboxGroupInput(session, "show_vars0", choiceNames = tv$nombre_tipo_valor, choiceValues = tv$id_tipo_valor)
+      updateCheckboxGroupInput(session, "show_vars0", choiceNames = td$nombre_tipo_dato, choiceValues = td$id_tipo_dato)
     })
     
     # reactive variable to enable study's checkbox once the first one is selected

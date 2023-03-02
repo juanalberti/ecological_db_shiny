@@ -81,9 +81,10 @@ shinyServer( #shinyServer
       df<-inFile()
       val<-ncol(df)
       options(useFancyQuotes = FALSE)
-      idntv<- trae_tv(paste(sQuote(unlist(strsplit(colnames(df),split = ","))),collapse = ", "))
+      idntv<- trae_nombre_tipo_dato()
       slidinputs <- lapply(seq(length.out = req(length(input$check))), function(i){
-        sliderInput(inputId = paste0("dat",i), label = paste0("Data range for ", idntv[which(idntv$fk_id_tipo_valor==input$check[i]),"nombre_tipo_valor"]),
+        sliderInput(inputId = paste0("dat",i), label = paste0("Data range for ", 
+                                                              idntv[which(idntv$id_tipo_dato==input$check[i]),"nombre_tipo_dato"]),
                     min=1,max=val,step=1, ticks = FALSE,
                     value=c(max(max((1:ncol(df))[colnames(df) %in% trae_nombre_tipo_escala()$nombre]),
                                 max((1:ncol(df))[colnames(df) %in% trae_nombre_factor()$nombre_factor]),
@@ -91,9 +92,43 @@ shinyServer( #shinyServer
       })
     })
     
-    # disable the submit button until conditions are met
+    # dynamically create one select input for measurement unit per type of dependent variable upon selection on the checkbox
+    output$out_um <- renderUI({
+      req(input$format)
+      df<-inFile()
+      val<-ncol(df)
+      options(useFancyQuotes = FALSE)
+      idntv<- trae_nombre_tipo_dato()
+      selinputsum <- lapply(seq(length.out = req(length(input$check))), function(i){
+        selectInput(inputId = paste0("um",i), label = paste0("Measurement unit for ", 
+                                                             idntv[which(idntv$id_tipo_dato==input$check[i]),"nombre_tipo_dato"]),
+                    choices = trae_tv()$unidad_medida)
+      })
+    })
+    
+    # dynamically create one description per type of dependent variable upon selection on the checkbox
+    output$out_obs <- renderUI({
+      req(input$format)
+      req(input$experimento)
+      req(input$dat1)
+      df<-inFile()
+      val<-ncol(df)
+      options(useFancyQuotes = FALSE)
+      idntv<- trae_nombre_tipo_dato()
+      selinputsobs <- lapply(seq(length.out = req(length(input$check))), function(i){
+        selectInput(inputId = paste0("obs",i), label = paste0("Description for variable type ", 
+                                                             idntv[which(idntv$id_tipo_dato==input$check[i]),"nombre_tipo_dato"]),
+                    choices = trae_obs_td(input$experimento, trae_tipo_dato() %>% 
+                                            filter(id_tipo_dato == as.numeric(input$check[[i]])) %>% 
+                                            pull(nombre_tipo_dato))$obs_tipo_dato)
+      })
+    })
+
+    
+    
+        # disable the submit button until conditions are met
     observe({
-      fieldsAll <- c("replace","format","nombre", "ambiente", "experimento", if({req(input$format)
+      fieldsAll <- c("replace","format","nombre", "ambiente", "responsable", "experimento", if({req(input$format)
         input$format=="wide"}){"check"},
         if({req(input$format)
           input$format=="long"}){"check_long"},"fecha","hora",
@@ -102,7 +137,9 @@ shinyServer( #shinyServer
       if(any(input$format=="wide" && 
              !is.null(input$check) && 
              length(input$check)>0 && 
-             length(grep("dat[[0-9]]*",names(input))>0), input$format=="long"&& 
+             length(grep("dat[[0-9]]*",names(input))>0) &&
+             length(grep("obs[[0-9]]*",names(input))>0) &&
+             length(grep("um[[0-9]]*",names(input))>0), input$format=="long"&& 
              !is.null(input$check_long))){
         if(input$format=="wide"){
           posic<-grep("dat[[0-9]]*",names(input))
@@ -217,7 +254,8 @@ shinyServer( #shinyServer
       if(!is.null(df$Time)){
         updateNumericInput(session, "hora",value=(1:ncol(df))[colnames(df) %in% c("Time","time")])
       }
-      updateSelectInput(session,"nombre", choices = trae_nombre_usuario()$nombre_usuario)
+      # updateSelectInput(session,"nombre", choices = trae_nombre_usuario()$nombre_usuario)
+      # updateSelectInput(session,"responsable", choices = trae_nombre_usuario()$nombre_usuario)
       updateSelectInput(session,"ambiente", choices = trae_nombre_ambiente()$nombre_ambiente)
       updateNumericInput(session, "subr",value=ifelse(all(!(colnames(df)=="id_padre")),0,(1:ncol(df))[colnames(df)=="id_padre"]))
       updateNumericInput(session, "fk_subr",value=ifelse(all(!(colnames(df)=="fk_id_padre")),0,(1:ncol(df))[colnames(df)=="fk_id_padre"]))
@@ -239,8 +277,8 @@ shinyServer( #shinyServer
                         ))
       options(useFancyQuotes = FALSE)
       # bring value's type from db to use it as the response
-      idntv<- trae_tv(paste(sQuote(unlist(strsplit(colnames(df),split = ","))),collapse = ", "))
-      updateCheckboxGroupInput(session,inputId="check",choiceNames = idntv$nombre_tipo_valor, choiceValues = idntv$fk_id_tipo_valor)
+      # idntv<- trae_tv(paste(sQuote(unlist(strsplit(colnames(df),split = ","))),collapse = ", "))
+      updateCheckboxGroupInput(session,inputId="check",choiceNames = trae_nombre_tipo_dato()$nombre_tipo_dato, choiceValues = trae_nombre_tipo_dato()$id_tipo_dato)
     })
     
     # show only the experiments associated with the selected user
@@ -329,7 +367,8 @@ shinyServer( #shinyServer
       id_ci<-subset(experimento, nombre_experimento==input$experimento)$fk_id_ciudad
       id_am<-trae_id_am(input$ambiente)$id_ambiente
       id_us<-trae_id_us(input$nombre)$id_usuario
-      
+      id_resp<-trae_id_us(input$responsable)$id_usuario
+
       # loop to verify scales and get their ids
       id_esc<-NULL
       te<-trae_tipo_escala()$id_tipo_escala # bring all scale ids
@@ -384,8 +423,7 @@ shinyServer( #shinyServer
           upd_val<-0
           
           # creat process number to delete insertions upon request if there were insertions
-          ii<-inserta_inserc(id_us,id_ex,db)[1,1]
-          
+          ii<-inserta_inserc(id_us,id_ex,id_resp, db)[1,1]
           # loop over rows to verify if data was previously inserted or not, and if not, insert it
           for (filas in 1:nrow(df)){ # loop over all the rows of the input file loop#3_each_row
             if(input$subregistros==1 && input$fk_subr>0){ # enter if there are subregistries. if#3_there_are_subreg
@@ -473,22 +511,49 @@ shinyServer( #shinyServer
                 } # end of #loop_f_col
                 
                 # loop to gather the type of dependent variable and then save the value of each dependent variable
+                ronda <- 0 # set counter to know which input check is being considered to 0
                 for(idtv in if(input$format=="wide"){input$check}else{input$check_long}){ # loop over reported data types #loop_tv
+                  ronda <- ronda + 1
                   if(input$format=="wide"){
-                    num_slider<-which(input$check==idtv)
+                    num_slider<-ronda # which(input$check==idtv) # NO CREO QUE FUNCIONE
                     col_slider<-prueba[num_slider,]} else{
                       if(input$format=="long"){
-                        idtv_long<-(trae_id_tipo_valor()%>%filter(nombre_tipo_valor==idtv))$id_tipo_valor
+                        idtv_long<-(trae_tipo_dato()%>%filter(nombre_tipo_dato==idtv))$id_tipo_dato
                       }
                     }
+                  
+                  ums<-lapply(1:length(input$check), function(i) {
+                    input[[paste0("um", i)]]
+                  })
+                  df_ums<-data.frame(udm=unlist(ums))
+                  
+                  observaciones <- lapply(1:length(input$check), function(i) {
+                    input[[paste0("obs", i)]]
+                  })
+                  df_obs<-data.frame(obs=unlist(observaciones))
                   for(dat_x_tv in col_slider$menor:col_slider$mayor){ # loop over columns of a given data type. #loop_dat_x_tv
                     if(df[filas,dat_x_tv]!=""){ # insert value if cell value is not empty 
                       iddat<-trae_id_dato(colnames(df)[dat_x_tv],db)$id_dato # fetch data column id
+                      
+                      # irxtd <- inserta_reg_x_td(ir, 
+                      #                  ifelse(input$format=="long",idtv_long,idtv), 
+                      #                  trae_tv() %>% filter(unidad_medida ==df_ums[ronda,1]) %>% pull(id_tipo_valor),
+                      #                  df_obs[ronda, 1])
+
                       # insert value
                       inserta_registro_valor(iddat,
                                              as.numeric(df[filas,dat_x_tv]),
+                                             trae_tv() %>% filter(unidad_medida ==df_ums[ronda,1]) %>% pull(id_tipo_valor), #ESPECIFICAR CUAL
+                                             ir,
                                              ifelse(input$format=="long",idtv_long,idtv),
-                                             ir,db)
+                                             trae_obs_td(input$experimento, 
+                                                         trae_tipo_dato() %>% 
+                                                           filter(id_tipo_dato == ifelse(input$format=="long",idtv_long,idtv)) %>%
+                                                           pull(nombre_tipo_dato)) %>% 
+                                               filter(obs_tipo_dato == df_obs[ronda, 1]) %>%
+                                               pull(id_obs_tipo_dato),
+                                             ii,
+                                             db)
                       # increase the counter of inserted values
                       ins_val<-ins_val+1
                     }
@@ -504,15 +569,28 @@ shinyServer( #shinyServer
               } # end of #if_new_reg
               else { # one registry already in db #else_there_is_reg
                 # loop over columns of dependent variables to extract their values
+                ronda <- 0
                 for (idtv in if(input$format=="wide"){input$check}else{input$check_long}){ # loop over reported data types #loop_tv2  
+                  ronda <- ronda + 1
                   if(input$format=="wide"){ 
-                    num_slider<-which(input$check==idtv)
+                    num_slider<- ronda # which(input$check==idtv)
                     col_slider<-prueba[num_slider,]
                     } else {
                       if(input$format=="long"){
-                        idtv_long<-(trae_id_tipo_valor()%>%filter(nombre_tipo_valor==idtv))$id_tipo_valor
+                        idtv_long<- (trae_tipo_dato()%>%filter(nombre_tipo_dato==idtv))$id_tipo_dato 
+                        # (trae_id_tipo_valor()%>%filter(nombre_tipo_valor==idtv))$id_tipo_valor
                       }
                     }
+                  ums<-lapply(1:length(input$check), function(i) {
+                    input[[paste0("um", i)]]
+                  })
+                  df_ums<-data.frame(udm=unlist(ums))
+                  
+                  observaciones <- lapply(1:length(input$check), function(i) {
+                    input[[paste0("obs", i)]]
+                  })
+                  df_obs<-data.frame(obs=unlist(observaciones))
+                  
                   for(dat_x_tv in col_slider$menor:col_slider$mayor){ # loop over columns of a given data type. #loop_dat_x_tv2
                     iddat<-trae_id_dato(colnames(df)[dat_x_tv],db)$id_dato # fetch data column id
                     # brings the existing value of a given dependent variable, factor, level and scale from a given registry
@@ -520,7 +598,7 @@ shinyServer( #shinyServer
                                                                        left join registro_valor rv on r.id_registro=rv.fk_id_registro
                                                                        left join registro_escala re on re.fk_id_registro=rv.fk_id_registro
                                                                        left join registro_nivel rn on rn.fk_id_registro=rv.fk_id_registro
-                                                                       where r.id_registro=",idr," and rv.fk_id_dato =",iddat," and rv.fk_id_tipo_valor=",
+                                                                       where r.id_registro=",idr," and rv.fk_id_dato =",iddat," and rv.fk_id_tipo_dato=",
                                                                        ifelse(input$format=="long",idtv_long,idtv))))
                     # keep only one value, to compare it with the one in the spreadsheet
                     datosXid<-unique(registrado$valor)
@@ -563,11 +641,25 @@ shinyServer( #shinyServer
                           }
                         } # end of #loop_sca
                         
+                        # irxtd <- inserta_reg_x_td(idr, 
+                        #                           ifelse(input$format=="long",idtv_long,idtv), 
+                        #                           trae_tv() %>% filter(unidad_medida ==df_ums[ronda,1]) %>% pull(id_tipo_valor),
+                        #                           df_obs[ronda, 1])
+                        
                         # insert the value
                         inserta_registro_valor(iddat,
                                                as.numeric(df[filas,dat_x_tv]),
+                                               trae_tv() %>% filter(unidad_medida ==df_ums[ronda,1]) %>% pull(id_tipo_valor),
+                                               idr,
                                                ifelse(input$format=="long",idtv_long,idtv),
-                                               idr,db)
+                                               trae_obs_td(input$experimento, 
+                                                           trae_tipo_dato() %>% 
+                                                             filter(id_tipo_dato == ifelse(input$format=="long",idtv_long,idtv)) %>%
+                                                             pull(nombre_tipo_dato)) %>% 
+                                                 filter(obs_tipo_dato == df_obs[ronda, 1]) %>%
+                                                 pull(id_obs_tipo_dato),
+                                               ii,
+                                               db)
                         
                         # update the counter of inserted values
                         ins_val2<-ins_val2+1
@@ -587,6 +679,7 @@ shinyServer( #shinyServer
                           else { #update_data
                             # update value
                             update_ins(ifelse(valor!="",valor,'NULL'), ii, idr,iddat,
+                                       trae_tv() %>% filter(unidad_medida ==df_ums[ronda,1] %>% pull(id_tipo_valor)),
                                        ifelse(input$format=="long",idtv_long,idtv),db)
                             # update counter of updated values
                             upd_val<-upd_val+1

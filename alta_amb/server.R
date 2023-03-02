@@ -15,6 +15,12 @@ shinyServer(
         textInput(inputId = paste0("niv", i), label = paste0("New level ", i))
       })
     })
+    # create a dynamic text input with as many fields as levels of a factor are needed to introduce in the db
+    output$detail <- renderUI({
+      detalles <- lapply(seq(length.out = req(input$num)), function(i){
+        textInput(inputId = paste0("obs", i), label = paste0("Details for level ", i))
+      })
+    })
     
     # creates the table to show on the UI with the different environments already registered
     observeEvent(input$submit_another,{
@@ -58,7 +64,7 @@ shinyServer(
       
       # creates the table to show on the UI with the different levels for the factors already registered
       output$niveles<-DT::renderDataTable({
-        mostrar<-select(left_join(trae_factores(), trae_niveles()),c(nombre_factor,nombre_nivel))
+        mostrar<-select(left_join(trae_factores(), trae_niveles()),c(nombre_factor,nombre_nivel, obs_nivel))
         DT::datatable(mostrar,
                       options = list(
                         paging = FALSE,
@@ -145,6 +151,9 @@ shinyServer(
           nivs<-lapply(1:input$num, function(i) {
             input[[paste0("niv", i)]]
           })
+          detalle<-lapply(1:input$num, function(i) {
+            input[[paste0("obs", i)]]
+          })
           df_niveles<-data.frame(niveles=unlist(nivs))
           if(nrow(df_niveles)>0){
             valid<-subset(df_niveles, niveles!="")} else{
@@ -175,7 +184,10 @@ shinyServer(
         input[[paste0("niv", i)]]
       })
       df_niveles<-data.frame(niveles=unlist(nivs))
-      
+      detalle<-lapply(1:input$num, function(i) {
+        input[[paste0("obs", i)]]
+      })
+      df_detalle<-data.frame(obs_nivel=unlist(detalle))
       db<-conecta()
       # if a new system is needed, insert it
       if(input$amb==1){
@@ -192,7 +204,7 @@ shinyServer(
           alta_niv(ifelse(input$factor=="new",
                           id_fac,
                           trae_id_factor(input$factor,db)$id_factor),
-                   df_niveles[i,1], db)
+                   df_niveles[i,1], ifelse(is.na(df_detalle[i,1]), "NULL", df_detalle[i,1]), db)
         }
       }
       

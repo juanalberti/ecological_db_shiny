@@ -22,6 +22,7 @@ ui = dashboardPage(
           div(id="form",
               selectInput("user", label = "User's name:", choices = trae_usuarios()[,2]),
               selectInput("exp", label = "Study's name:", choices = character(0)),
+              selectInput("resp", label = "Uploader's name:", choices = character(0)),
               selectInput("insertion", label = "Insertion event (last 10)", choices = character(0)),
               actionButton("deleteins", "Delete")
               
@@ -49,18 +50,33 @@ server = function(session, input, output) {
     updateSelectInput(session, "exp", choices = ex_user$nombre_experimento)
   })
   
-  # update the available insertions depending on the chosen study
+  # update the available responsible depending on the chosen study
   observeEvent(input$exp, {
     req(input$exp)
     ex_user<-trae_ex_x_user(input$user)
-    ti<-sort(trae_insertion((ex_user%>%filter(nombre_experimento==input$exp))$id_experimento)$fecha_ins, decreasing = T)
-    updateSelectInput(session, "insertion", choices = ti[if(length(ti)>10){1:10}else{1:length(ti)}])
+    ins.tmp<-trae_insertion((ex_user%>%filter(nombre_experimento==input$exp))$id_experimento)
+    updateSelectInput(session, "resp", choices = trae_usuarios() %>% 
+                        filter(id_usuario %in% unique(ins.tmp$insertante)) %>% 
+                        pull(nombre_usuario))
   })
   
+  # update the available insertions depending on the chosen study
+  observeEvent(list(input$exp, input$resp), {
+    req(input$exp)
+    req(input$resp)
+    ex_user<-trae_ex_x_user(input$user)
+    ti<-sort(trae_insertion((ex_user %>% 
+                               filter(nombre_experimento==input$exp))$id_experimento) %>%
+               filter(insertante == trae_id_us(input$resp)$id_usuario) %>% pull(fecha_ins), decreasing = T)
+    updateSelectInput(session, "insertion", choices = ti[if(length(ti)>10){1:10}else{1:length(ti)}])
+  })
+
   # prepares data to show in the table about to be deleted
   tabla_ins<-reactive({
     req(input$insertion)
+    print(input$insertion)
     para_tabla<-trae_all_insertion(input$insertion)
+    print(para_tabla)
     if(nrow(para_tabla)>0){
       para_tabla%>%filter(is.na(valor_previo))%>%
         pivot_wider(values_from = nombre_escala,names_from=obs_escala)%>%

@@ -7,9 +7,20 @@ source("../connection.R")
 
 shinyServer(
   function(input, output, session){
-    
-    
     observeEvent(input$submit_another,{
+      # table showing users
+      output$usuarios<-DT::renderDataTable({
+        DT::datatable(trae_usuarios(),
+                      options = list(
+                        paging = FALSE,
+                        searching = TRUE,
+                        scrollX=T,
+                        scrollCollapse=T,
+                        fixedHeader=T,
+                        autoWidth = F,
+                        ordering = TRUE), rownames = F)
+      })
+      
       # table showing the types of variables registered
       output$tipo_var<-DT::renderDataTable({
         DT::datatable(trae_tipo_variable(),
@@ -36,6 +47,23 @@ shinyServer(
                         ordering = TRUE), rownames = F)
       })
     }, ignoreNULL = F)
+    
+    # conditional output summarizing users
+    output$conditionalBox.usu <- renderUI({
+      if(input$usu == 1){
+        return(
+          box(
+            title = "Summary of users", status = "primary", solidHeader = TRUE,
+            collapsible = TRUE, collapsed = ,width=12,
+            DT::dataTableOutput("usuarios")
+          )
+        )
+      } else {
+        return(
+          NULL
+        )
+      }
+    })
     
     # conditional output summarizing variable types
     output$conditionalBox.var <- renderUI({
@@ -71,19 +99,23 @@ shinyServer(
       }
     })
     
-    # update checkbox to associate a variable type with certain data types
-    observeEvent(input$var,{
-      td<-trae_nombre_tipo_dato()
-      updateCheckboxGroupInput(session, "vpd", choiceNames = td$nombre_tipo_dato,choiceValues = td$id_tipo_dato)},
-      ignoreInit = T)
+    # # update checkbox to associate a variable type with certain data types
+    # observeEvent(input$var,{
+    #   td<-trae_nombre_tipo_dato()
+    #   updateCheckboxGroupInput(session, "vpd", choiceNames = td$nombre_tipo_dato,choiceValues = td$id_tipo_dato)},
+    #   ignoreInit = T)
     
     # check that mandatory fields are filled and then enable the submit button
     observe({
-      if(input$var==1|input$dat==1){
-        mandatoryFilled <- all(if(input$var==1){
-          !is.null(input$nombre) && input$nombre != "" &&!is.null(input$vpd)},
+      if(input$var==1|input$dat==1|input$usu==1){
+        mandatoryFilled <- all(
+          if(input$var==1){
+          !is.null(input$unidad) && 
+              # !is.null(input$vpd) && 
+              input$unidad != "" },
           if(input$dat==1){
-            !is.null(input$ntd) && input$ntd != ""}
+            !is.null(input$ntd) && input$ntd != ""},
+          if(input$usu == 1){!is.null(input$nus) && input$nus != ""}
         )
         shinyjs::toggleState(id = "submit", condition = mandatoryFilled)
       }  else {
@@ -95,12 +127,17 @@ shinyServer(
     formData<-reactive({
       if(input$var==1){
         # insert the requested variable type
-        atv<-alta_tvalor(input$nombre, input$unidad, input$decimales,if(input$mostrar==T){1}else{0})
-        for(idtv in input$vpd){
-          # insert the requested association vetween variable type and data type
-          alta_vpd(idtv,atv)}}
+        atv<-alta_tvalor(input$unidad, input$decimales)
+        # for(idtv in input$vpd){
+        #   # insert the requested association between variable type and data type
+        #   alta_vpd(idtv,atv)}
+        }
       # inert the requested data type
-      if(input$dat==1){alta_tipo_dato(input$ntd)}
+      if(input$dat==1){alta_tipo_dato(input$ntd, if(input$mostrar==T){1}else{0})}
+      if(input$usu==1){
+        db <- conecta()
+        alta_usu(input$nus, db)
+        dbDisconnect(db)}
     })
     
     # from now on, show and hide different panels upon progress of submission and user's choices
