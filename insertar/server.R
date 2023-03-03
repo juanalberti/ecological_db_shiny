@@ -302,20 +302,24 @@ shinyServer( #shinyServer
       # if data stored in the long format
       if(input$format=="long"){
         if(input$others==0){ # if there are other columns in the long format
-          omitted<-seq(as.numeric(input$col_omit)[1],as.numeric(input$col_omit)[2])[!(seq(as.numeric(input$col_omit)[1],as.numeric(input$col_omit)[2])%in%input$value_long)] # variables not considered in this submission
-          men<-ncol(df[,-omitted])-1 # number of columns before turning into wide format
-          df<-spread(df[,-omitted],colnames(df)[input$name_long],colnames(df)[input$value_long]) # turn the long format into wide
-          col_slider<-data.frame(menor=men, mayor=ncol(df)) # creates an object with the end points of the dependent variables' range 
+          omitted<-seq(as.numeric(input$col_omit)[1],
+                       as.numeric(input$col_omit)[2])[!(seq(as.numeric(input$col_omit)[1],
+                                                            as.numeric(input$col_omit)[2]) %in% 
+                                                          input$value_long)] # variables not considered in this submission
+          men <- ncol(df[,-omitted])-1 # number of columns before turning into wide format
+          df <- df[,-omitted] %>% pivot_wider(names_from = colnames(df)[input$name_long],
+                                            values_from = colnames(df)[input$value_long]) # turn the long format into wide
+          col_slider<-data.frame(menor = men, mayor = ncol(df)) # creates an object with the end points of the dependent variables' range 
         } else { # if there are no other columns in the long format (no need to remove columns from df)
-          df<-df %>% pivot_wider(names_from = colnames(df)[input$name_long], values_from = colnames(df)[input$value_long])
-          col_slider<-data.frame(menor=ncol(inFile())-1, mayor=ncol(df))
+          df <- df %>% pivot_wider(names_from = colnames(df)[input$name_long], values_from = colnames(df)[input$value_long])
+          col_slider <- data.frame(menor = ncol(inFile())-1, mayor = ncol(df))
         }
       } # end process of validation and populaton
       
       # now, both long and wide input data are in the wide format
       # replace NA with "" to simplify insertions into the db
-      df[is.na(df)]<-""
-
+      # df[is.na(df)]<-""
+      # print(df)
       # here we want to store the numbers of columns with dependent variables
       if(input$format=="wide"){ # if data was uploaded in the wide format, now needs some tweaking
         # same as described above. dataframe with min and max values per dynamically generated slider
@@ -333,15 +337,18 @@ shinyServer( #shinyServer
         prueba1<-prueba[order(prueba$menor),] # sort sliders with columns ascending (in case first slider did not contain the first dependent variables)
         datos<-seq(min(prueba1$menor),max(prueba1$mayor))
       } else { # no tweaking needed if data was uploaded in the long format
-        datos<-col_slider$menor:col_slider$mayor
+        datos <- col_slider$menor:col_slider$mayor
       }
       
       # loop to check if factors and their levels were previously registerd in the db
       # also to store the id of each scale for each row of the input file
       niv_id<-data.frame()
       niv.tmp<-list()
+      orden_fac <- which(colnames(df) %in% 
+                           colnames(inFile())[as.numeric(input$factor)[1] : 
+                                                as.numeric(input$factor)[2]])
       for (fila2 in 1:nrow(df)){ # loop fila 2
-        for (i in as.numeric(input$factor)[1]:as.numeric(input$factor)[2]){ # for each factor column
+        for (i in orden_fac){ # for each factor column
           fact.tmp<-verifica_factor(colnames(df)[i]) # check factor
           # if factor does not exist, exit with warning
           if(nrow(fact.tmp)==0){
@@ -383,8 +390,11 @@ shinyServer( #shinyServer
       te<-trae_tipo_escala()$id_tipo_escala # bring all scale ids
       for(fila in 1:nrow(df)){ # loop over all the rows of the input file loop#1
         id_escalas<-list()
-        for(l in input$escala[1]:input$escala[2]){ # loop over scale columns. loop#2
-          lista<-l-(input$escala[1]-1) 
+        orden_esc <- which(colnames(df) %in% 
+                             colnames(inFile())[as.numeric(input$escala)[1] : 
+                                                  as.numeric(input$escala)[2]])
+        for(l in orden_esc){ # loop over scale columns. loop#2
+          lista<-l-(min(orden_esc)-1) 
           tipoe.tmp<-verifica_tipo_escala(colnames(df)[l]) # verify scale type
           if(nrow(tipoe.tmp)==0){ # if scale not found, quit with error
             stop(paste("scale",colnames(df)[l], "doesn't exist. Verify its name", sep=" "))
@@ -435,6 +445,7 @@ shinyServer( #shinyServer
           ii<-inserta_inserc(id_us,id_ex,id_resp, db)[1,1]
           # loop over rows to verify if data was previously inserted or not, and if not, insert it
           for (filas in 1:nrow(df)){ # loop over all the rows of the input file loop#3_each_row
+            print(filas)
             if(input$subregistros==1 && input$fk_subr>0){ # enter if there are subregistries. if#3_there_are_subreg
               if(df[filas,input$fk_subr]!=""){ # enter if the given row is a subregistry. if#4_subregistry_row
                 # gather data from the chosen experiment and corresponding date and time (if not empty)
@@ -461,12 +472,8 @@ shinyServer( #shinyServer
                             if(input$hora>0){
                               df[filas, input$hora] == row_reg_csv[,input$hora]
                             },
-                            df[filas, seq(as.numeric(input$escala)[1],
-                                          as.numeric(input$escala)[2])] == row_reg_csv[,seq(as.numeric(input$escala)[1],
-                                                                                            as.numeric(input$escala)[2])],
-                            df[filas, seq(as.numeric(input$factor)[1],
-                                          as.numeric(input$factor)[2])] == row_reg_csv[,seq(as.numeric(input$factor)[1],
-                                                                                            as.numeric(input$factor)[2])])){
+                            df[filas, orden_esc] == row_reg_csv[, orden_esc],
+                            df[filas, orden_fac] == row_reg_csv[, orden_fac])){
                       stop(paste0("factor, scale, date and/or time for subregistry ",filas," does not match with the parent registry"))
                     }
                   } # end of #check_match
@@ -507,11 +514,12 @@ shinyServer( #shinyServer
                                      ifelse(input$id_fk_subr>0 && df[filas,input$fk_subr]!="",as.character(df[filas,input$id_fk_subr]),""),
                                      paste(id_factors_str[filas],id_levels_str[filas],id_scales_str[filas],sep = "."),
                                      ii)[1,1]
+                print(c("registro", ir))
                 # increase registry counter
                 ins_reg<-ins_reg+1
                 
                 # loop to insert the factors and their levels associated to the former registry
-                for (column in as.numeric(input$factor[1]):as.numeric(input$factor[2])){ # loop over factor columns #loop_f_col
+                for (column in orden_fac){ # loop over factor columns #loop_f_col
                   id_fact<-trae_id_factor(colnames(df)[column],db)$id_factor
                   id_nivel<-trae_id_nivel(df[filas, column],id_fact,db)$id_nivel
                   inserta_registro_nivel(ir,
@@ -521,6 +529,7 @@ shinyServer( #shinyServer
                 
                 # loop to gather the type of dependent variable and then save the value of each dependent variable
                 ronda <- 0 # set counter to know which input check is being considered to 0
+                print("fijó ronda")
                 for(idtv in if(input$format=="wide"){input$check}else{input$check_long}){ # loop over reported data types #loop_tv
                   ronda <- ronda + 1
                   if(input$format=="wide"){
@@ -550,19 +559,30 @@ shinyServer( #shinyServer
                       #                  df_obs[ronda, 1])
 
                       # insert value
+                      print("filas")
+                      print(filas)
+                      print(ronda)
+                      if(!is.na(df[filas,dat_x_tv])){
                       inserta_registro_valor(iddat,
                                              as.numeric(df[filas,dat_x_tv]),
-                                             trae_tv() %>% filter(unidad_medida ==df_ums[ronda,1]) %>% pull(id_tipo_valor), #ESPECIFICAR CUAL
+                                             trae_tv() %>% 
+                                               filter(unidad_medida == ifelse(input$format=="long",
+                                                                                          input$um_long, 
+                                                                                          df_ums[ronda,1])) %>% 
+                                               pull(id_tipo_valor),
                                              ir,
-                                             ifelse(input$format=="long",idtv_long,idtv),
+                                             ifelse(input$format=="long", idtv_long, idtv),
                                              trae_obs_td(input$experimento, 
                                                          trae_tipo_dato() %>% 
-                                                           filter(id_tipo_dato == ifelse(input$format=="long",idtv_long,idtv)) %>%
+                                                           filter(id_tipo_dato == ifelse(input$format=="long", idtv_long, idtv)) %>%
                                                            pull(nombre_tipo_dato)) %>% 
-                                               filter(obs_tipo_dato == df_obs[ronda, 1]) %>%
+                                               filter(obs_tipo_dato == ifelse(input$format=="long",
+                                                                              input$obs_long,
+                                                                              df_obs[ronda, 1])) %>%
                                                pull(id_obs_tipo_dato),
                                              ii,
                                              db)
+                        }
                       # increase the counter of inserted values
                       ins_val<-ins_val+1
                     }
@@ -599,7 +619,6 @@ shinyServer( #shinyServer
                     input[[paste0("obs", i)]]
                   })
                   df_obs<-data.frame(obs=unlist(observaciones))
-                  
                   for(dat_x_tv in col_slider$menor:col_slider$mayor){ # loop over columns of a given data type. #loop_dat_x_tv2
                     iddat<-trae_id_dato(colnames(df)[dat_x_tv],db)$id_dato # fetch data column id
                     # brings the existing value of a given dependent variable, factor, level and scale from a given registry
@@ -617,7 +636,7 @@ shinyServer( #shinyServer
                     # insert if no previous value stored
                     if(length(datosXid)==0){ # enter if there was no value for that id #if_no_prev_data
                       if(valor!=""){ # enter if cell is not empty #if_not_empty
-                        for (column in as.numeric(input$factor[1]):as.numeric(input$factor[2])){ # loop to insert factor levels if needed #loop_niv
+                        for (column in orden_fac){ # loop to insert factor levels if needed #loop_niv
                           # bring factor id
                           id_fact<-trae_id_factor(colnames(df)[column],db)$id_factor
                           # bring level id
@@ -656,20 +675,27 @@ shinyServer( #shinyServer
                         #                           df_obs[ronda, 1])
                         
                         # insert the value
+                        if(!is.na(df[filas,dat_x_tv])){
                         inserta_registro_valor(iddat,
                                                as.numeric(df[filas,dat_x_tv]),
-                                               trae_tv() %>% filter(unidad_medida ==df_ums[ronda,1]) %>% pull(id_tipo_valor),
+                                               trae_tv() %>% 
+                                                 filter(unidad_medida == ifelse(input$format=="long", 
+                                                                                input$um_long, 
+                                                                                df_ums[ronda,1])) %>% 
+                                                 pull(id_tipo_valor),
                                                idr,
                                                ifelse(input$format=="long",idtv_long,idtv),
                                                trae_obs_td(input$experimento, 
                                                            trae_tipo_dato() %>% 
                                                              filter(id_tipo_dato == ifelse(input$format=="long",idtv_long,idtv)) %>%
                                                              pull(nombre_tipo_dato)) %>% 
-                                                 filter(obs_tipo_dato == df_obs[ronda, 1]) %>%
+                                                 filter(obs_tipo_dato == ifelse(input$format=="long",
+                                                                                input$obs_long,
+                                                                                df_obs[ronda, 1])) %>%
                                                  pull(id_obs_tipo_dato),
                                                ii,
                                                db)
-                        
+                        }
                         # update the counter of inserted values
                         ins_val2<-ins_val2+1
                       } # end of #if_not_empty
