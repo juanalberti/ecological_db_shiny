@@ -139,7 +139,7 @@ shinyServer( #shinyServer
              length(input$check)>0 && 
              length(grep("dat[[0-9]]*",names(input))>0) &&
              length(grep("obs[[0-9]]*",names(input))>0) &&
-             length(grep("um[[0-9]]*",names(input))>0), input$format=="long"&& 
+             length(grep("um[[0-9]]*",names(input))>0), input$format=="long" && 
              !is.null(input$check_long))){
         if(input$format=="wide"){
           posic<-grep("dat[[0-9]]*",names(input))
@@ -213,15 +213,16 @@ shinyServer( #shinyServer
                                      !(max(datos)%in%seq(as.numeric(input$factor)[1],as.numeric(input$factor)[2])),
                                      !(min(datos)%in%seq(as.numeric(input$escala)[1],as.numeric(input$escala)[2])),
                                      !(max(datos)%in%seq(as.numeric(input$escala)[1],as.numeric(input$escala)[2])))
-                               } else { all(
+                               } else { 
+                                 all(
                                  (input$name_long>0 && input$value_long>0 && input$name_long != input$value_long && !is.na(input$value_long)),
                                  (ifelse(input$fecha>0,1,0)+ifelse(input$hora>0,1,0)+ifelse(input$subr>0,1,0)+
                                     ifelse(input$fk_subr>0,1,0)+ifelse(input$id_fk_subr>0,1,0)+length(seq(input$factor[1],input$factor[2]))+
                                     length(seq(input$escala[1],input$escala[2]))+ifelse(input$name_long>0,1,0)+
                                     ifelse(is.na(input$value_long),0,ifelse(input$value_long>0,1,0))+
-                                    ifelse(input$value_long%in%seq(input$col_omit[1],input$col_omit[2]),
+                                    ifelse(input$others == 1, 0, ifelse(input$value_long%in%seq(input$col_omit[1],input$col_omit[2]),
                                            length(seq(input$col_omit[1],input$col_omit[2]))-1,
-                                           length(seq(input$col_omit[1],input$col_omit[2]))))==ncol(inFile()),
+                                           length(seq(input$col_omit[1],input$col_omit[2])))))==ncol(inFile()),
                                  !(input$name_long%in%seq(as.numeric(input$factor)[1],as.numeric(input$factor)[2])),
                                  !(input$name_long%in%seq(as.numeric(input$escala)[1],as.numeric(input$escala)[2])),
                                  !(input$value_long%in%seq(as.numeric(input$factor)[1],as.numeric(input$factor)[2])),
