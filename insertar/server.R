@@ -242,6 +242,11 @@ shinyServer( #shinyServer
       }
     })
     
+    # update select input for description of the measurements for the selected dependent variable type 
+    observeEvent(list(input$experimento, input$check_long), {
+      updateSelectInput(session, "obs_long", choices = trae_obs_td(input$experimento, input$check_long)$obs_tipo_dato)
+    })
+    
     # update input values guessing from the input file
     observeEvent(input$format,{
       req(input$format)
