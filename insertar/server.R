@@ -178,6 +178,10 @@ shinyServer( #shinyServer
                    !is.null(input[[x]]) && input[[x]] != ""
                  },
                  logical(1)))
+<<<<<<< HEAD
+=======
+        print(mandatoryFilled)
+>>>>>>> 3573943cc07d0ed607b14882f86b58b61f6b84d2
         # check that all conditions are met (i.e. TRUE)
         mandatoryFilled <- all(mandatoryFilled, # no empty inputs
                                input$fecha!=input$hora, # no overlap between date and time
