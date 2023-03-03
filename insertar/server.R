@@ -172,12 +172,12 @@ shinyServer( #shinyServer
           datos<-seq(min(prueba$menor),max(prueba$mayor))
         }
         # define all mandatory conditions before the submit button is unblocked
-        mandatoryFilled <-
+        mandatoryFilled <-all(
           vapply(fieldsAll,
                  function(x) {
                    !is.null(input[[x]]) && input[[x]] != ""
                  },
-                 logical(1))
+                 logical(1)))
         # check that all conditions are met (i.e. TRUE)
         mandatoryFilled <- all(mandatoryFilled, # no empty inputs
                                input$fecha!=input$hora, # no overlap between date and time
