@@ -128,11 +128,13 @@ shinyServer( #shinyServer
     
         # disable the submit button until conditions are met
     observe({
-      fieldsAll <- c("replace","format","nombre", "ambiente", "responsable", "experimento", if({req(input$format)
-        input$format=="wide"}){"check"},
-        if({req(input$format)
-          input$format=="long"}){"check_long"},"fecha","hora",
-        "factor", "escala",if(input$subregistros==1){c("subr","fk_subr","id_fk_subr")})
+      fieldsAll <- c("replace","format","nombre", "fecha",
+                     "hora",
+                     "ambiente", "responsable", "experimento", if({req(input$format)
+                       input$format=="wide"}){"check"},
+                     if(input$format=="long"){"check_long"},
+                     if(input$subregistros==1){c("subr","fk_subr","id_fk_subr")}
+                     )
       # check if all mandatory fields have a value
       if(any(input$format=="wide" && 
              !is.null(input$check) && 
@@ -178,10 +180,7 @@ shinyServer( #shinyServer
                    !is.null(input[[x]]) && input[[x]] != ""
                  },
                  logical(1)))
-<<<<<<< HEAD
-=======
-        print(mandatoryFilled)
->>>>>>> 3573943cc07d0ed607b14882f86b58b61f6b84d2
+        
         # check that all conditions are met (i.e. TRUE)
         mandatoryFilled <- all(mandatoryFilled, # no empty inputs
                                input$fecha!=input$hora, # no overlap between date and time
@@ -306,9 +305,9 @@ shinyServer( #shinyServer
           omitted<-seq(as.numeric(input$col_omit)[1],as.numeric(input$col_omit)[2])[!(seq(as.numeric(input$col_omit)[1],as.numeric(input$col_omit)[2])%in%input$value_long)] # variables not considered in this submission
           men<-ncol(df[,-omitted])-1 # number of columns before turning into wide format
           df<-spread(df[,-omitted],colnames(df)[input$name_long],colnames(df)[input$value_long]) # turn the long format into wide
-          col_slider<-data.frame(menor=men, mayor=ncol(df)) # creates an object with the end points of te dependent varaibles' range 
+          col_slider<-data.frame(menor=men, mayor=ncol(df)) # creates an object with the end points of the dependent variables' range 
         } else { # if there are no other columns in the long format (no need to remove columns from df)
-          df<-spread(df,colnames(df)[input$name_long],colnames(df)[input$value_long])
+          df<-df %>% pivot_wider(names_from = colnames(df)[input$name_long], values_from = colnames(df)[input$value_long])
           col_slider<-data.frame(menor=ncol(inFile())-1, mayor=ncol(df))
         }
       } # end process of validation and populaton
