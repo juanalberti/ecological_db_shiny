@@ -160,8 +160,8 @@ verifica_taxa_origen <- function (nombre) {
 # INSERCIONES ####################
 inserta_registro <- function (id_experimento, id_ciudad, id_ambiente, id_usuario, fecha_registro, hora,db, id_padre, ref_hijo, id_heading,id_ins) 
 {
-  query <- sprintf ("INSERT INTO registro (fk_id_experimento, fk_id_ciudad, fk_id_ambiente, fk_id_usuario, fecha_registro,anio, hora, id_registro_padre, ref_hijo,id_heading,fk_id_insercion) 
-                    VALUES (%s, %s, %s, %s, '%s', '%s','%s', %s, '%s', '%s',%s)", id_experimento, id_ciudad, id_ambiente, id_usuario, fecha_registro, substr(fecha_registro,1,4),hora,id_padre,ref_hijo,id_heading,id_ins)
+  query <- sprintf ("INSERT INTO registro (fk_id_experimento, fk_id_ciudad, fk_id_ambiente, fk_id_usuario, fecha_registro, hora, id_registro_padre, ref_hijo,id_heading,fk_id_insercion) 
+                    VALUES (%s, %s, %s, %s, '%s','%s', %s, '%s', '%s',%s)", id_experimento, id_ciudad, id_ambiente, id_usuario, fecha_registro,hora,id_padre,ref_hijo,id_heading,id_ins)
   (data <- dbExecute(db, query))
   
   query <- sprintf("SELECT LAST_INSERT_ID()");
