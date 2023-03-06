@@ -481,13 +481,29 @@ shinyServer( #shinyServer
               } # if#4_subregistry_row
             } # end of if#3_there_are_subreg
             # gather data from the chosen experiment and corresponding date, and time, parent id(if not empty)
-            actualizar<-dbGetQuery(db,paste0("SELECT r.id_registro from registro r
-                                             where r.fk_id_experimento=",id_ex," and r.fecha_registro='",df[filas,input$fecha],
-                                             "' and r.id_heading='",paste(id_factors_str[filas],id_levels_str[filas],id_scales_str[filas],sep = "."),"'",
-                                             if(input$hora>0 && df[filas,input$hora]!=""){paste0(" and r.hora=",df[filas,input$hora])},
-                                             if(input$subregistros==1 && input$fk_subr>0 &&df[filas,input$fk_subr]!=""){
-                                               paste0(" and r.ref_hijo='",df[filas,input$id_fk_subr],"'")},
-                                             " and r.id_registro_padre=",ifelse(input$subregistros==1 && input$fk_subr>0 &&df[filas,input$fk_subr]!="",parentid,0)))
+            actualizar<-dbGetQuery(db,
+            paste0("SELECT r.id_registro from registro r
+                                             where r.fk_id_experimento=",
+                   id_ex,
+                   " and r.fecha_registro='",
+                   df[filas,input$fecha],
+                   "' and r.id_heading='",
+                   paste(id_factors_str[filas],
+                         id_levels_str[filas],
+                         id_scales_str[filas],
+                         sep = "."),
+                   "'",
+                   if(input$hora>0 && df[filas,input$hora]!=""){
+                     paste0(" and r.hora=",
+                            df[filas,input$hora])},
+                   if(input$subregistros==1 && input$fk_subr>0 &&df[filas,input$fk_subr]!=""){
+                     paste0(" and r.ref_hijo='",
+                            df[filas,input$id_fk_subr],
+                            "'")},
+                   " and r.id_registro_padre=",
+                   ifelse(input$subregistros==1 && input$fk_subr>0 &&df[filas,input$fk_subr]!="",
+                          parentid,
+                          0)))
             
             # save only registry id
             idr<-unique(actualizar$id_registro)
@@ -502,13 +518,21 @@ shinyServer( #shinyServer
                                      id_ci,
                                      id_am,
                                      id_us,
-                                     as.character(df[filas,as.numeric(input$fecha)]),
-                                     ifelse(input$hora==0,"",ifelse(nchar(df[filas, as.numeric(input$hora)])<5,
-                                                                    df[filas, as.numeric(input$hora)],
+                                     ifelse(input$format=="wide", 
+                                            as.character(df[filas,as.numeric(input$fecha)]),
+                                            df[fila, which(colnames(df) == 
+                                                    colnames(inFile())[as.numeric(input$fecha)])]),
+                                     ifelse(input$hora==0,
+                                            "",
+                                            ifelse(nchar(df[filas, as.numeric(input$hora)])<5,
+                                                                    ifelse(input$format=="wide",
+                                                                           df[filas, as.numeric(input$hora)],
+                                                                           df[fila, which(colnames(df) == 
+                                                                                            colnames(inFile())[as.numeric(input$fhora)])]),
                                                                     stop(paste0("row ",
                                                                                 filas,
-                                                                                " has more than 4 digits in the time column"))
-                                     )),
+                                                                                " has more than 4 digits in the time column")))
+                                            ),
                                      db,
                                      ifelse(input$id_fk_subr>0 && df[filas,input$fk_subr]!="",parentid,0),
                                      ifelse(input$id_fk_subr>0 && df[filas,input$fk_subr]!="",as.character(df[filas,input$id_fk_subr]),""),
