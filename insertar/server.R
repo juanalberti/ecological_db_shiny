@@ -445,7 +445,7 @@ shinyServer( #shinyServer
           ii<-inserta_inserc(id_us,id_ex,id_resp, db)[1,1]
           # loop over rows to verify if data was previously inserted or not, and if not, insert it
           for (filas in 1:nrow(df)){ # loop over all the rows of the input file loop#3_each_row
-            print(filas)
+            # print(filas)
             if(input$subregistros==1 && input$fk_subr>0){ # enter if there are subregistries. if#3_there_are_subreg
               if(df[filas,input$fk_subr]!=""){ # enter if the given row is a subregistry. if#4_subregistry_row
                 # gather data from the chosen experiment and corresponding date and time (if not empty)
@@ -538,7 +538,7 @@ shinyServer( #shinyServer
                                      ifelse(input$id_fk_subr>0 && df[filas,input$fk_subr]!="",as.character(df[filas,input$id_fk_subr]),""),
                                      paste(id_factors_str[filas],id_levels_str[filas],id_scales_str[filas],sep = "."),
                                      ii)[1,1]
-                print(c("registro", ir))
+                # print(c("registro", ir))
                 # increase registry counter
                 ins_reg<-ins_reg+1
                 
@@ -553,7 +553,7 @@ shinyServer( #shinyServer
                 
                 # loop to gather the type of dependent variable and then save the value of each dependent variable
                 ronda <- 0 # set counter to know which input check is being considered to 0
-                print("fijó ronda")
+                # print("fijó ronda")
                 for(idtv in if(input$format=="wide"){input$check}else{input$check_long}){ # loop over reported data types #loop_tv
                   ronda <- ronda + 1
                   if(input$format=="wide"){
@@ -574,7 +574,7 @@ shinyServer( #shinyServer
                   })
                   df_obs<-data.frame(obs=unlist(observaciones))
                   for(dat_x_tv in col_slider$menor:col_slider$mayor){ # loop over columns of a given data type. #loop_dat_x_tv
-                    if(df[filas,dat_x_tv]!=""){ # insert value if cell value is not empty 
+                    if(df[filas,dat_x_tv]!="" && !is.na(df[filas,dat_x_tv]!="")){ # insert value if cell value is not empty 
                       iddat<-trae_id_dato(colnames(df)[dat_x_tv],db)$id_dato # fetch data column id
                       
                       # irxtd <- inserta_reg_x_td(ir, 
@@ -583,9 +583,11 @@ shinyServer( #shinyServer
                       #                  df_obs[ronda, 1])
 
                       # insert value
-                      print("filas")
-                      print(filas)
-                      print(ronda)
+                      # print("filas")
+                      # print(filas)
+                      # print(ronda)
+                      # print(c("iddat", iddat))
+                      # print(c("valor", as.numeric(df[filas,dat_x_tv])))
                       if(!is.na(df[filas,dat_x_tv])){
                       inserta_registro_valor(iddat,
                                              as.numeric(df[filas,dat_x_tv]),
