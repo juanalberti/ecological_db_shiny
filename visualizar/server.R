@@ -44,10 +44,11 @@ shinyServer(
     observeEvent(input$show_vars1,{
       req(input$show_vars1)
       df<-trae_yr_x_idex(paste(input$show_vars1, collapse=","))
+      print(df)
       updateSliderInput(session, "range", step=1,
-                          min = na.omit(min(df$anio)), 
-                          max = na.omit(max(df$anio)), 
-                          value=c(min(na.omit(df$anio)),max(na.omit(df$anio))))        
+                          min = na.omit(min(df)), 
+                          max = na.omit(max(df)), 
+                          value=c(min(na.omit(df)),max(na.omit(df))))        
     })
     
     # table to show on the info box

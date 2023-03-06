@@ -800,15 +800,16 @@ trae_id_experimento<-function(nombre_experimento){
   mydb <- conecta()
   on.exit(dbDisconnect(mydb))
   query<-sprintf("SELECT id_experimento FROM experimento where nombre_experimento=('%s')",nombre_experimento)
-  idex<-dbGetQuery(mydb, query)
+  idex <-dbGetQuery(mydb, query)
   return(idex)
 }
 
 trae_yr_x_idex<-function(id_ex){
   mydb <- conecta()
   on.exit(dbDisconnect(mydb))
-  query<-sprintf("SELECT distinct(anio) FROM registro where fk_id_experimento in (%s)",id_ex)
-  idex<-dbGetQuery(mydb, query)
+  query<-sprintf("SELECT distinct(fecha_registro) FROM registro where fk_id_experimento in (%s)",id_ex)
+  idex.tmp<-dbGetQuery(mydb, query)
+  idex <- unique(as.numeric(substring(idex.tmp$fecha_registro, 1, 4)))
   return(idex)
 }
 
