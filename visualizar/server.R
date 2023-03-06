@@ -44,7 +44,6 @@ shinyServer(
     observeEvent(input$show_vars1,{
       req(input$show_vars1)
       df<-trae_yr_x_idex(paste(input$show_vars1, collapse=","))
-      print(df)
       updateSliderInput(session, "range", step=1,
                           min = na.omit(min(df)), 
                           max = na.omit(max(df)), 
@@ -62,15 +61,18 @@ shinyServer(
       # inputs required
       req(input$show_vars0)
       req(input$show_vars1)
+      print(input$range)
       # if years are selected...
       if(input$range[2]>1000){
         # bring data
         all1<-trae_todo(input$show_vars1,input$show_vars0,input$range[1]:input$range[2])
+        print(all1)
         # and put it on the wide format
         all2<-pivot_wider(all1,names_from="obs_escala", values_from = "nombre_escala")
         all3<-pivot_wider(all2, names_from = "nombre_factor",values_from = "nombre_nivel")
         all<-pivot_wider(all3, names_from = "nombre_dato",values_from = "valor")
-        all$anio<-as.numeric(all$anio)
+        print(all)
+        all$anio<-as.numeric(substring(all$fecha_registro, 1, 4))
         for (i in 1:length(na.omit(unique(all1$nombre_factor)))){
           all[,unique(all1$nombre_factor)[i]]<-as.factor(data.frame(all[,unique(all1$nombre_factor)[i]])[,1])
         }

@@ -160,13 +160,12 @@ verifica_taxa_origen <- function (nombre) {
 # INSERCIONES ####################
 inserta_registro <- function (id_experimento, id_ciudad, id_ambiente, id_usuario, fecha_registro, hora,db, id_padre, ref_hijo, id_heading,id_ins) 
 {
-  query <- sprintf ("INSERT INTO registro (fk_id_experimento, fk_id_ciudad, fk_id_ambiente, fk_id_usuario, fecha_registro, hora, id_registro_padre, ref_hijo,id_heading,fk_id_insercion) 
-                    VALUES (%s, %s, %s, %s, '%s','%s', %s, '%s', '%s',%s)", id_experimento, id_ciudad, id_ambiente, id_usuario, fecha_registro,hora,id_padre,ref_hijo,id_heading,id_ins)
+  query <- sprintf ("INSERT INTO registro (fk_id_experimento, fk_id_ciudad, fk_id_ambiente, fk_id_usuario, fecha_registro, anio, hora, id_registro_padre, ref_hijo,id_heading,fk_id_insercion) 
+                    VALUES (%s, %s, %s, %s, '%s', '%s', '%s', %s, '%s', '%s',%s)", id_experimento, id_ciudad, id_ambiente, id_usuario, fecha_registro, substring(fecha_registro, 1, 4), hora,id_padre,ref_hijo,id_heading,id_ins)
   (data <- dbExecute(db, query))
   
   query <- sprintf("SELECT LAST_INSERT_ID()");
   data <- dbGetQuery(db, query)
-  
   return(data)
 }
 
@@ -978,7 +977,7 @@ trae_tipo_escala<-function(){
 trae_todo<-function(id_ex, id_tv, yrs){
   mydb <- conecta()
   on.exit(dbDisconnect(mydb))
-  query<-sprintf("select r.id_registro,r.anio, r.id_registro_padre,e.obs_escala, e.nombre_escala,
+  query<-sprintf("select r.id_registro,r.fecha_registro, r.id_registro_padre,e.obs_escala, e.nombre_escala,
                    f.nombre_factor, n.nombre_nivel, d.nombre_dato, ex.nombre_experimento, ex.escala_medicion,ex.unidad_medicion,
                  rv.valor, td.mostrar, td.nombre_tipo_dato, tv.unidad_medida, u.nombre_usuario
                  from registro r
