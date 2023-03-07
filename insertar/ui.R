@@ -103,6 +103,12 @@ shinyUI(
             )  
           ),
           mainPanel(
+            bsCollapse(id = "dups", open = "Are there duplicated values?",
+                       bsCollapsePanel("Are there duplicated values?",
+                                       DT::dataTableOutput("duplicados"),
+                                       style = "danger"
+                       )
+            ),
             DT::dataTableOutput("info")
           )
         )

@@ -75,6 +75,18 @@ shinyServer( #shinyServer
       
     })
     
+    output$duplicados <-DT::renderDataTable({
+      req(inFile)
+      duplis<-inFile() %>%
+        group_by(Block, Plot, date, Drought, Nitrogen, P, K, taxa) %>%
+        summarise(n = dplyr::n(), .groups = "drop") %>%
+        filter(n > 1L)
+      if(nrow(duplis) > 0){
+      DT::datatable(duplis)
+      } 
+    })
+    
+    
     # dynamically create one slider per type of dependent variable upon selection on the checkbox
     output$out <- renderUI({
       req(input$format)
@@ -585,9 +597,12 @@ shinyServer( #shinyServer
                       # insert value
                       # print("filas")
                       # print(filas)
+                      # print(colnames(df))
                       # print(ronda)
                       # print(c("iddat", iddat))
+                      # print(c("dat_x_tv", dat_x_tv))
                       # print(c("valor", as.numeric(df[filas,dat_x_tv])))
+                      # print(df[filas,])
                       if(!is.na(df[filas,dat_x_tv])){
                       inserta_registro_valor(iddat,
                                              as.numeric(df[filas,dat_x_tv]),
