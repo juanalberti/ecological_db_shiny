@@ -2,6 +2,7 @@ library(shiny)
 library(RMySQL)
 library(shinydashboard)
 library(dplyr)
+library(shinyBS)
 
 source("../utils.R")
 source("../connection.R")
