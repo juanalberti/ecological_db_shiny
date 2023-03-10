@@ -77,13 +77,19 @@ shinyServer( #shinyServer
     
     output$duplicados <-DT::renderDataTable({
       req(inFile)
-      duplis<-inFile() %>%
-        group_by(Block, Plot, date, Drought, Nitrogen, P, K, taxa) %>%
+      req(input$format)
+      req(input$name_long)
+      
+      if(input$format == "long"){
+        duplis<-inFile() %>%
+        group_by(across(c(input$escala[1]:input$escala[2], input$factor[1]:input$factor[2], input$fecha, input$name_long))) %>%
         summarise(n = dplyr::n(), .groups = "drop") %>%
         filter(n > 1L)
+        print(duplis)
       if(nrow(duplis) > 0){
       DT::datatable(duplis)
-      } 
+      }
+      }
     })
     
     
