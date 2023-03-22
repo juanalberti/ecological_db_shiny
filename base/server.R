@@ -45,7 +45,7 @@ if(nrow(all1)>0){
   datos<-datos[datos%in%colnames(all)]
   todo<-NULL
   for (i in (1:ncol(all))[colnames(all)%in%datos]){
-    num.tmp<-length(all[!(is.na(all[,i])),i])
+    num.tmp<-nrow(all[!(is.na(all[,i])),i])
     fila<-cbind(colnames(all)[i],num.tmp)
     todo<-rbind(todo,fila)
   }
@@ -59,9 +59,6 @@ if(nrow(all1)>0){
   dxv<-aggregate(all[,1], list(exp=all$nombre_tipo_dato), length)
 }
 
-print(dxv)
-print(dxy)
-print(dxe)
 # if there is no data yet show a message
 shinyServer(function(input, output) {
   output$status <- renderUI({
