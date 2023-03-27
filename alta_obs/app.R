@@ -57,7 +57,7 @@ server = function(session, input, output) {
       trae_obs_td(input$exp, input$td)
     })
   })
-  trae_obs_td("Filters", "Cobertura")
+
   # check that all mandatory fields are filled and then enable submit button
   observe({
     mandatoryFilled <-vapply(fieldsAll,
