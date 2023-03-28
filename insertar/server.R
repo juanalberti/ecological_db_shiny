@@ -42,24 +42,24 @@ shinyServer( #shinyServer
     # read file
     inFile<- reactive({
       req(input$file1)
-        ptn <- "\\.[[:alnum:]]{1,5}$"
-        suf <- tolower(regmatches(input$file1$name, regexpr(ptn, input$file1$name)))
-        if (suf %in% c('.xls', '.xlsx')) {
-          re<-read_excel(input$file1$datapath, sheet=input$sheet)
-          # colu<-grep("POSIXct",sapply(re, class))
-          colu<-1:ncol(re)
-          return(re %>%
-                   mutate_at(vars(all_of(colu)), list(as.character)))
+      ptn <- "\\.[[:alnum:]]{1,5}$"
+      suf <- tolower(regmatches(input$file1$name, regexpr(ptn, input$file1$name)))
+      if (suf %in% c('.xls', '.xlsx')) {
+        re<-read_excel(input$file1$datapath, sheet=input$sheet)
+        # colu<-grep("POSIXct",sapply(re, class))
+        colu<-1:ncol(re)
+        return(re %>%
+                 mutate_at(vars(all_of(colu)), list(as.character)))
+      }else{
+        if (suf %in% '.csv') {
+          return(read.csv(input$file1$datapath, check.names = F,row.names = NULL))
         }else{
-          if (suf %in% '.csv') {
-            return(read.csv(input$file1$datapath, check.names = F,row.names = NULL))
-          }else{
-            if (suf %in% '.ods') {
-              return(read_ods(input$file1$datapath, sheet = input$sheetods))
-            }
+          if (suf %in% '.ods') {
+            return(read_ods(input$file1$datapath, sheet = input$sheetods))
           }
         }
-      })
+      }
+    })
     
     Sys.sleep(2)    
     output$fileUploaded <- reactive({
@@ -82,13 +82,13 @@ shinyServer( #shinyServer
       
       if(input$format == "long"){
         duplis<-inFile() %>%
-        group_by(across(c(input$escala[1]:input$escala[2], input$factor[1]:input$factor[2], input$fecha, input$name_long))) %>%
-        summarise(n = dplyr::n(), .groups = "drop") %>%
-        filter(n > 1L)
+          group_by(across(c(input$escala[1]:input$escala[2], input$factor[1]:input$factor[2], input$fecha, input$name_long))) %>%
+          summarise(n = dplyr::n(), .groups = "drop") %>%
+          filter(n > 1L)
         print(duplis)
-      if(nrow(duplis) > 0){
-      DT::datatable(duplis)
-      }
+        if(nrow(duplis) > 0){
+          DT::datatable(duplis)
+        }
       }
     })
     
@@ -135,16 +135,16 @@ shinyServer( #shinyServer
       idntv<- trae_nombre_tipo_dato()
       selinputsobs <- lapply(seq(length.out = req(length(input$check))), function(i){
         selectInput(inputId = paste0("obs",i), label = paste0("Description for variable type ", 
-                                                             idntv[which(idntv$id_tipo_dato==input$check[i]),"nombre_tipo_dato"]),
+                                                              idntv[which(idntv$id_tipo_dato==input$check[i]),"nombre_tipo_dato"]),
                     choices = trae_obs_td(input$experimento, trae_tipo_dato() %>% 
                                             filter(id_tipo_dato == as.numeric(input$check[[i]])) %>% 
                                             pull(nombre_tipo_dato))$obs_tipo_dato)
       })
     })
-
     
     
-        # disable the submit button until conditions are met
+    
+    # disable the submit button until conditions are met
     observe({
       fieldsAll <- c("replace","format","nombre", "fecha",
                      "hora",
@@ -152,7 +152,7 @@ shinyServer( #shinyServer
                        input$format=="wide"}){"check"},
                      if(input$format=="long"){"check_long"},
                      if(input$subregistros==1){c("subr","fk_subr","id_fk_subr")}
-                     )
+      )
       # check if all mandatory fields have a value
       if(any(input$format=="wide" && 
              !is.null(input$check) && 
@@ -236,25 +236,25 @@ shinyServer( #shinyServer
                                      !(max(datos)%in%seq(as.numeric(input$escala)[1],as.numeric(input$escala)[2])))
                                } else { 
                                  all(
-                                 (input$name_long>0 && input$value_long>0 && input$name_long != input$value_long && !is.na(input$value_long)),
-                                 (ifelse(input$fecha>0,1,0)+ifelse(input$hora>0,1,0)+ifelse(input$subr>0,1,0)+
-                                    ifelse(input$fk_subr>0,1,0)+ifelse(input$id_fk_subr>0,1,0)+length(seq(input$factor[1],input$factor[2]))+
-                                    length(seq(input$escala[1],input$escala[2]))+ifelse(input$name_long>0,1,0)+
-                                    ifelse(is.na(input$value_long),0,ifelse(input$value_long>0,1,0))+
-                                    ifelse(input$others == 1, 0, ifelse(input$value_long%in%seq(input$col_omit[1],input$col_omit[2]),
-                                           length(seq(input$col_omit[1],input$col_omit[2]))-1,
-                                           length(seq(input$col_omit[1],input$col_omit[2])))))==ncol(inFile()),
-                                 !(input$name_long%in%seq(as.numeric(input$factor)[1],as.numeric(input$factor)[2])),
-                                 !(input$name_long%in%seq(as.numeric(input$escala)[1],as.numeric(input$escala)[2])),
-                                 !(input$value_long%in%seq(as.numeric(input$factor)[1],as.numeric(input$factor)[2])),
-                                 !(input$value_long%in%seq(as.numeric(input$escala)[1],as.numeric(input$escala)[2])),
-                                 if(input$others==0){all(
-                                   !(min(unlist(input$col_omit))%in%seq(as.numeric(input$factor)[1],as.numeric(input$factor)[2])),
-                                   !(max(unlist(input$col_omit))%in%seq(as.numeric(input$factor)[1],as.numeric(input$factor)[2])),
-                                   !(min(unlist(input$col_omit))%in%seq(as.numeric(input$escala)[1],as.numeric(input$escala)[2])),
-                                   !(max(unlist(input$col_omit))%in%seq(as.numeric(input$escala)[1],as.numeric(input$escala)[2])),
-                                   !(input$name_long%in%seq(as.numeric(input$col_omit)[1],as.numeric(input$col_omit)[2])))
-                                 })
+                                   (input$name_long>0 && input$value_long>0 && input$name_long != input$value_long && !is.na(input$value_long)),
+                                   (ifelse(input$fecha>0,1,0)+ifelse(input$hora>0,1,0)+ifelse(input$subr>0,1,0)+
+                                      ifelse(input$fk_subr>0,1,0)+ifelse(input$id_fk_subr>0,1,0)+length(seq(input$factor[1],input$factor[2]))+
+                                      length(seq(input$escala[1],input$escala[2]))+ifelse(input$name_long>0,1,0)+
+                                      ifelse(is.na(input$value_long),0,ifelse(input$value_long>0,1,0))+
+                                      ifelse(input$others == 1, 0, ifelse(input$value_long%in%seq(input$col_omit[1],input$col_omit[2]),
+                                                                          length(seq(input$col_omit[1],input$col_omit[2]))-1,
+                                                                          length(seq(input$col_omit[1],input$col_omit[2])))))==ncol(inFile()),
+                                   !(input$name_long%in%seq(as.numeric(input$factor)[1],as.numeric(input$factor)[2])),
+                                   !(input$name_long%in%seq(as.numeric(input$escala)[1],as.numeric(input$escala)[2])),
+                                   !(input$value_long%in%seq(as.numeric(input$factor)[1],as.numeric(input$factor)[2])),
+                                   !(input$value_long%in%seq(as.numeric(input$escala)[1],as.numeric(input$escala)[2])),
+                                   if(input$others==0){all(
+                                     !(min(unlist(input$col_omit))%in%seq(as.numeric(input$factor)[1],as.numeric(input$factor)[2])),
+                                     !(max(unlist(input$col_omit))%in%seq(as.numeric(input$factor)[1],as.numeric(input$factor)[2])),
+                                     !(min(unlist(input$col_omit))%in%seq(as.numeric(input$escala)[1],as.numeric(input$escala)[2])),
+                                     !(max(unlist(input$col_omit))%in%seq(as.numeric(input$escala)[1],as.numeric(input$escala)[2])),
+                                     !(input$name_long%in%seq(as.numeric(input$col_omit)[1],as.numeric(input$col_omit)[2])))
+                                   })
                                }
         )
         # enable/disable the submit button
@@ -299,7 +299,7 @@ shinyServer( #shinyServer
                         ))
       updateSliderInput(session, "col_omit",
                         min = 1, max = val, value=c(1+max(c(input$fecha, input$hora,input$factor[2], input$escala[2], 
-                                                          input$subr, input$fk_subr, input$id_fk_subr, input$name_long)),
+                                                            input$subr, input$fk_subr, input$id_fk_subr, input$name_long)),
                                                     val
                         ))
       options(useFancyQuotes = FALSE)
@@ -326,7 +326,7 @@ shinyServer( #shinyServer
                                                           input$value_long)] # variables not considered in this submission
           men <- ncol(df[,-omitted])-1 # number of columns before turning into wide format
           df <- df[,-omitted] %>% pivot_wider(names_from = colnames(df)[input$name_long],
-                                            values_from = colnames(df)[input$value_long]) # turn the long format into wide
+                                              values_from = colnames(df)[input$value_long]) # turn the long format into wide
           col_slider<-data.frame(menor = men, mayor = ncol(df)) # creates an object with the end points of the dependent variables' range 
         } else { # if there are no other columns in the long format (no need to remove columns from df)
           df <- df %>% pivot_wider(names_from = colnames(df)[input$name_long], values_from = colnames(df)[input$value_long])
@@ -402,7 +402,7 @@ shinyServer( #shinyServer
       id_am<-trae_id_am(input$ambiente)$id_ambiente
       id_us<-trae_id_us(input$nombre)$id_usuario
       id_resp<-trae_id_us(input$responsable)$id_usuario
-
+      
       # loop to verify scales and get their ids
       id_esc<-NULL
       te<-trae_tipo_escala()$id_tipo_escala # bring all scale ids
@@ -500,28 +500,28 @@ shinyServer( #shinyServer
             } # end of if#3_there_are_subreg
             # gather data from the chosen experiment and corresponding date, and time, parent id(if not empty)
             actualizar<-dbGetQuery(db,
-            paste0("SELECT r.id_registro from registro r
+                                   paste0("SELECT r.id_registro from registro r
                                              where r.fk_id_experimento=",
-                   id_ex,
-                   " and r.fecha_registro='",
-                   df[filas,input$fecha],
-                   "' and r.id_heading='",
-                   paste(id_factors_str[filas],
-                         id_levels_str[filas],
-                         id_scales_str[filas],
-                         sep = "."),
-                   "'",
-                   if(input$hora>0 && df[filas,input$hora]!=""){
-                     paste0(" and r.hora=",
-                            df[filas,input$hora])},
-                   if(input$subregistros==1 && input$fk_subr>0 &&df[filas,input$fk_subr]!=""){
-                     paste0(" and r.ref_hijo='",
-                            df[filas,input$id_fk_subr],
-                            "'")},
-                   " and r.id_registro_padre=",
-                   ifelse(input$subregistros==1 && input$fk_subr>0 &&df[filas,input$fk_subr]!="",
-                          parentid,
-                          0)))
+                                          id_ex,
+                                          " and r.fecha_registro='",
+                                          df[filas,input$fecha],
+                                          "' and r.id_heading='",
+                                          paste(id_factors_str[filas],
+                                                id_levels_str[filas],
+                                                id_scales_str[filas],
+                                                sep = "."),
+                                          "'",
+                                          if(input$hora>0 && df[filas,input$hora]!=""){
+                                            paste0(" and r.hora=",
+                                                   df[filas,input$hora])},
+                                          if(input$subregistros==1 && input$fk_subr>0 &&df[filas,input$fk_subr]!=""){
+                                            paste0(" and r.ref_hijo='",
+                                                   df[filas,input$id_fk_subr],
+                                                   "'")},
+                                          " and r.id_registro_padre=",
+                                          ifelse(input$subregistros==1 && input$fk_subr>0 &&df[filas,input$fk_subr]!="",
+                                                 parentid,
+                                                 0)))
             
             # save only registry id
             idr<-unique(actualizar$id_registro)
@@ -539,18 +539,18 @@ shinyServer( #shinyServer
                                      ifelse(input$format=="wide", 
                                             as.character(df[filas,as.numeric(input$fecha)]),
                                             df[fila, which(colnames(df) == 
-                                                    colnames(inFile())[as.numeric(input$fecha)])]),
+                                                             colnames(inFile())[as.numeric(input$fecha)])]),
                                      ifelse(input$hora==0,
                                             "",
                                             ifelse(nchar(df[filas, as.numeric(input$hora)])<5,
-                                                                    ifelse(input$format=="wide",
-                                                                           df[filas, as.numeric(input$hora)],
-                                                                           df[fila, which(colnames(df) == 
-                                                                                            colnames(inFile())[as.numeric(input$fhora)])]),
-                                                                    stop(paste0("row ",
-                                                                                filas,
-                                                                                " has more than 4 digits in the time column")))
-                                            ),
+                                                   ifelse(input$format=="wide",
+                                                          df[filas, as.numeric(input$hora)],
+                                                          df[fila, which(colnames(df) == 
+                                                                           colnames(inFile())[as.numeric(input$fhora)])]),
+                                                   stop(paste0("row ",
+                                                               filas,
+                                                               " has more than 4 digits in the time column")))
+                                     ),
                                      db,
                                      ifelse(input$id_fk_subr>0 && df[filas,input$fk_subr]!="",parentid,0),
                                      ifelse(input$id_fk_subr>0 && df[filas,input$fk_subr]!="",as.character(df[filas,input$id_fk_subr]),""),
@@ -599,7 +599,7 @@ shinyServer( #shinyServer
                       #                  ifelse(input$format=="long",idtv_long,idtv), 
                       #                  trae_tv() %>% filter(unidad_medida ==df_ums[ronda,1]) %>% pull(id_tipo_valor),
                       #                  df_obs[ronda, 1])
-
+                      
                       # insert value
                       # print("filas")
                       # print(filas)
@@ -610,26 +610,26 @@ shinyServer( #shinyServer
                       # print(c("valor", as.numeric(df[filas,dat_x_tv])))
                       # print(df[filas,])
                       if(!is.na(df[filas,dat_x_tv])){
-                      inserta_registro_valor(iddat,
-                                             as.numeric(df[filas,dat_x_tv]),
-                                             trae_tv() %>% 
-                                               filter(unidad_medida == ifelse(input$format=="long",
-                                                                                          input$um_long, 
-                                                                                          df_ums[ronda,1])) %>% 
-                                               pull(id_tipo_valor),
-                                             ir,
-                                             ifelse(input$format=="long", idtv_long, idtv),
-                                             trae_obs_td(input$experimento, 
-                                                         trae_tipo_dato() %>% 
-                                                           filter(id_tipo_dato == ifelse(input$format=="long", idtv_long, idtv)) %>%
-                                                           pull(nombre_tipo_dato)) %>% 
-                                               filter(obs_tipo_dato == ifelse(input$format=="long",
-                                                                              input$obs_long,
-                                                                              df_obs[ronda, 1])) %>%
-                                               pull(id_obs_tipo_dato),
-                                             ii,
-                                             db)
-                        }
+                        inserta_registro_valor(iddat,
+                                               as.numeric(df[filas,dat_x_tv]),
+                                               trae_tv() %>% 
+                                                 filter(unidad_medida == ifelse(input$format=="long",
+                                                                                input$um_long, 
+                                                                                df_ums[ronda,1])) %>% 
+                                                 pull(id_tipo_valor),
+                                               ir,
+                                               ifelse(input$format=="long", idtv_long, idtv),
+                                               trae_obs_td(input$experimento, 
+                                                           trae_tipo_dato() %>% 
+                                                             filter(id_tipo_dato == ifelse(input$format=="long", idtv_long, idtv)) %>%
+                                                             pull(nombre_tipo_dato)) %>% 
+                                                 filter(obs_tipo_dato == ifelse(input$format=="long",
+                                                                                input$obs_long,
+                                                                                df_obs[ronda, 1])) %>%
+                                                 pull(id_obs_tipo_dato),
+                                               ii,
+                                               db)
+                      }
                       # increase the counter of inserted values
                       ins_val<-ins_val+1
                     }
@@ -651,12 +651,12 @@ shinyServer( #shinyServer
                   if(input$format=="wide"){ 
                     num_slider<- ronda # which(input$check==idtv)
                     col_slider<-prueba[num_slider,]
-                    } else {
-                      if(input$format=="long"){
-                        idtv_long<- (trae_tipo_dato()%>%filter(nombre_tipo_dato==idtv))$id_tipo_dato 
-                        # (trae_id_tipo_valor()%>%filter(nombre_tipo_valor==idtv))$id_tipo_valor
-                      }
+                  } else {
+                    if(input$format=="long"){
+                      idtv_long<- (trae_tipo_dato()%>%filter(nombre_tipo_dato==idtv))$id_tipo_dato 
+                      # (trae_id_tipo_valor()%>%filter(nombre_tipo_valor==idtv))$id_tipo_valor
                     }
+                  }
                   ums<-lapply(1:length(input$check), function(i) {
                     input[[paste0("um", i)]]
                   })
@@ -723,25 +723,25 @@ shinyServer( #shinyServer
                         
                         # insert the value
                         if(!is.na(df[filas,dat_x_tv])){
-                        inserta_registro_valor(iddat,
-                                               as.numeric(df[filas,dat_x_tv]),
-                                               trae_tv() %>% 
-                                                 filter(unidad_medida == ifelse(input$format=="long", 
-                                                                                input$um_long, 
-                                                                                df_ums[ronda,1])) %>% 
-                                                 pull(id_tipo_valor),
-                                               idr,
-                                               ifelse(input$format=="long",idtv_long,idtv),
-                                               trae_obs_td(input$experimento, 
-                                                           trae_tipo_dato() %>% 
-                                                             filter(id_tipo_dato == ifelse(input$format=="long",idtv_long,idtv)) %>%
-                                                             pull(nombre_tipo_dato)) %>% 
-                                                 filter(obs_tipo_dato == ifelse(input$format=="long",
-                                                                                input$obs_long,
-                                                                                df_obs[ronda, 1])) %>%
-                                                 pull(id_obs_tipo_dato),
-                                               ii,
-                                               db)
+                          inserta_registro_valor(iddat,
+                                                 as.numeric(df[filas,dat_x_tv]),
+                                                 trae_tv() %>% 
+                                                   filter(unidad_medida == ifelse(input$format=="long", 
+                                                                                  input$um_long, 
+                                                                                  df_ums[ronda,1])) %>% 
+                                                   pull(id_tipo_valor),
+                                                 idr,
+                                                 ifelse(input$format=="long",idtv_long,idtv),
+                                                 trae_obs_td(input$experimento, 
+                                                             trae_tipo_dato() %>% 
+                                                               filter(id_tipo_dato == ifelse(input$format=="long",idtv_long,idtv)) %>%
+                                                               pull(nombre_tipo_dato)) %>% 
+                                                   filter(obs_tipo_dato == ifelse(input$format=="long",
+                                                                                  input$obs_long,
+                                                                                  df_obs[ronda, 1])) %>%
+                                                   pull(id_obs_tipo_dato),
+                                                 ii,
+                                                 db)
                         }
                         # update the counter of inserted values
                         ins_val2<-ins_val2+1
@@ -766,14 +766,14 @@ shinyServer( #shinyServer
                             # update counter of updated values
                             upd_val<-upd_val+1
                           } # end of #update_data
-                          } # end of #if_dif_val
+                        } # end of #if_dif_val
                       } # end of #else_prev_data_!=
-                } #else_avail_data 
-              } # end of #loop_dat_x_tv2
+                    } #else_avail_data 
+                  } # end of #loop_dat_x_tv2
                 } # end of #loop_tv2
-                } # end of #else_there_is_reg
-                } # end of else#4_<=1 id for the row analyzed
-                  } # end of loop#3_each_row
+              } # end of #else_there_is_reg
+            } # end of else#4_<=1 id for the row analyzed
+          } # end of loop#3_each_row
           
           # if no insertions or updates, delete registry of insertions
           if((ins_val+ins_val2+upd_val)==0){
@@ -793,7 +793,7 @@ shinyServer( #shinyServer
           output$ins_valor<-renderText({paste0(ins_val+ins_val2," values added in total.")})
           output$updated<-renderText({paste0(upd_val," updated values.")})
           output$no_inserta<-renderText({paste0(length(which(df[,datos]!=""))-ins_val-ins_val2-upd_val," values ommited because they were already registered (except deletions).")})
-              }, # end of TryCatch expression. #trycatchexpr
+        }, # end of TryCatch expression. #trycatchexpr
         # if there were errors, roll back the transaction and print the error
         error = function(err) {
           dbRollback(db)
@@ -804,7 +804,7 @@ shinyServer( #shinyServer
         finally = {
           dbDisconnect(db)
         }) # end tryCatch
-        }) #formData
+    }) #formData
     observeEvent(input$submit, {
       shinyjs::disable("submit")
       shinyjs::show("submit_msg")
@@ -829,5 +829,5 @@ shinyServer( #shinyServer
       shinyjs::show("form")
       shinyjs::hide("thankyou_msg")
     })
-    } #shinyServer_funtion
-      )  #shinyServer
+  } #shinyServer_funtion
+)  #shinyServer

@@ -9,7 +9,8 @@ menu<-dashboardSidebar(
   menuItem("New user, variable & data type", icon = icon("ruler"),href = "../alta_tvalor/", newtab = F),
   menuItem("New dependent variable", icon = icon("pagelines"),href = "../alta_deps/", newtab = F),
   menuItem("Details for a given study", icon = icon("book"),href = "../alta_obs/", newtab = F),
-  menuItem("Add data", icon = icon("database"),href = "../insertar/", newtab = F),
+  menuItem("Add data", icon = icon("database"), href = "../insertar/", newtab = F),
+  menuItem("Add shared observations", icon = icon("clone"), href = "../alta_compartidos/", newtab = F),
   menuItem("Delete insertion event", icon = icon("backspace"),href = "../borrar_evento/", newtab = F),
   menuItem("Delete study", icon = icon("trash-alt"),href = "../borrar/", newtab = F),
   menuItem("Visualize data",icon = icon("eye"),href = "../visualizar/", newtab = F)
@@ -527,6 +528,17 @@ alta_taxa_origen <- function (origen)
   return(data)
 }
 
+# Duplicado ####
+alta_duplicado <- function (idesc1, idesc2, db) 
+{
+  query <- sprintf ("INSERT INTO compartidos (fk_id_esc1, fk_id_esc2) 
+                    VALUES (%s, %s)", 
+                    idesc1, idesc2)
+  data <- dbExecute(db, query)
+
+  return(data)
+}
+
 
 # BAJA #################
 
@@ -1014,6 +1026,36 @@ trae_gps_x_idex<-function(id_ex){
   return(Gps)
 }
 
+# Compartido #######
+trae_escala <- function(id_ex){
+  mydb <- conecta()
+  on.exit(dbDisconnect(mydb))
+  query<-sprintf("SELECT e.nombre_experimento, e1.obs_escala, e1.nombre_escala, ex.nombre_experimento, e2.obs_escala, e2.nombre_escala  FROM compartidos c
+  left join escala e1 on e1.id_escala = c.fk_id_esc1
+  LEFT JOIN experimento e on e.id_experimento = e1.fk_id_experimento
+  LEFT JOIN escala e2 on e2.id_escala = c.fk_id_esc2
+  LEFT JOIN experimento ex on ex.id_experimento = e2.fk_id_experimento")
+  duplis<-dbGetQuery(mydb, query)
+  return(data.frame(duplis))
+}
+
+trae_id_escala <- function(fk_id_ex, obs_escala, nombre_escala, db){
+  query<-paste0("SELECT id_escala FROM escala where fk_id_experimento=",fk_id_ex, 
+                        " and obs_escala ='", obs_escala, 
+                        "' and nombre_escala = '", nombre_escala, "'")
+  idesc<-dbGetQuery(db, query)
+  return(idesc$id_escala)
+}
+
+trae_duplicados <- function(id_ex){
+  mydb<-conecta()
+  on.exit(dbDisconnect(mydb))
+  query<-sprintf("select id_escala, nombre_escala, obs_escala, fk_id_experimento
+                 from escala
+                 where fk_id_experimento = (%s)", id_ex)
+  data<-dbGetQuery(mydb,query)
+  return(data)
+}
 # VARIOS ###############
 
 update_ins<-function(valor, fk_id_insercion, fk_id_registro,fk_id_dato,fk_id_tipo_valor,fk_id_tipo_dato,db){
