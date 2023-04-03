@@ -73,26 +73,26 @@ server = function(session, input, output) {
     mandatoryFilled <- all(mandatoryFilled)
     shinyjs::toggleState(id = "submit", condition = mandatoryFilled)
   })
-  
+
   observeEvent(input$exp1, {
     req(input$exp1)
     updateRadioButtons(session,
                        "esc1",
-                       choices = trae_escala(trae_id_experimento(input$exp1)) %>%
+                       choices = trae_duplicados(trae_id_experimento(input$exp1)) %>%
                          pull(obs_escala) %>%
                          unique())
   })
-  
+
   observeEvent(list(input$exp1, input$esc1), {
     req(input$exp1)
     req(input$esc1)
-    updateSelectInput(session, 
-                       "nombre1", 
-                       choices = trae_escala(trae_id_experimento(input$exp1)) %>% 
+    updateSelectInput(session,
+                       "nombre1",
+                       choices = trae_duplicados(trae_id_experimento(input$exp1)) %>%
                         filter(obs_escala == input$esc1) %>%
                          pull(nombre_escala))
   })
-  
+
   observeEvent(input$exp1, {
     req(input$exp1)
     updateSelectInput(session,
@@ -101,22 +101,22 @@ server = function(session, input, output) {
                          filter(nombre_experimento != input$exp1) %>%
                          pull(nombre_experimento))
   })
-  
+
   observeEvent(input$exp2, {
     req(input$exp2)
     updateRadioButtons(session,
                        "esc2",
-                       choices = trae_escala(trae_id_experimento(input$exp2)) %>%
+                       choices = trae_duplicados(trae_id_experimento(input$exp2)) %>%
                          pull(obs_escala) %>%
                          unique())
   })
-  
+
   observeEvent(list(input$exp2, input$esc2), {
     req(input$exp2)
     req(input$esc2)
-    updateSelectInput(session, 
-                      "nombre2", 
-                      choices = trae_escala(trae_id_experimento(input$exp2)) %>% 
+    updateSelectInput(session,
+                      "nombre2",
+                      choices = trae_duplicados(trae_id_experimento(input$exp2)) %>%
                         filter(obs_escala == input$esc2) %>%
                         pull(nombre_escala))
   })
