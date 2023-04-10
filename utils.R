@@ -991,7 +991,7 @@ trae_todo<-function(id_ex, id_tv, yrs){
   on.exit(dbDisconnect(mydb))
   query<-sprintf("select r.id_registro,r.fecha_registro, r.id_registro_padre,e.obs_escala, e.nombre_escala,
                    f.nombre_factor, n.nombre_nivel, d.nombre_dato, ex.nombre_experimento, ex.escala_medicion,ex.unidad_medicion,
-                 rv.valor, td.mostrar, td.nombre_tipo_dato, tv.unidad_medida, u.nombre_usuario
+                 rv.valor, td.mostrar, td.nombre_tipo_dato, tv.unidad_medida, u.nombre_usuario, e.id_escala
                  from registro r
                  left join registro_escala re on re.fk_id_registro = r.id_registro
                  left join escala e on e.id_escala = re.fk_id_escala
@@ -1056,6 +1056,16 @@ trae_duplicados <- function(id_ex){
   data<-dbGetQuery(mydb,query)
   return(data)
 }
+
+trae_compartidos <- function(){
+  mydb<-conecta()
+  on.exit(dbDisconnect(mydb))
+  query<-sprintf("select fk_id_esc2
+                 from compartidos")
+  data<-dbGetQuery(mydb,query)
+  return(data)
+}
+
 # VARIOS ###############
 
 update_ins<-function(valor, fk_id_insercion, fk_id_registro,fk_id_dato,fk_id_tipo_valor,fk_id_tipo_dato,db){
