@@ -32,13 +32,14 @@ shinyUI(
                              leafletOutput("mymap1"))
           ),
           mainPanel(
-            bsCollapse(id = "collapseExample", open = "Data",
+            bsCollapse(id = "collapseExample", open = "Duplicated plots",
                        bsCollapsePanel("Information", dataTableOutput("info"), style = "warning"),
                        bsCollapsePanel("Summary", h4("Range of available years"),
                                        verbatimTextOutput("summary"),
                                        h4("Summary of cases per factor / treatment"),
                                        verbatimTextOutput("summary2"),
                                        h4("Don't forget to see the information for each study! (see above)"), style = "info"),
+                       bsCollapsePanel("Duplicated plots", DT::dataTableOutput("duplicados"), style="danger"),
                        bsCollapsePanel("Data", DT::dataTableOutput("mytable0"), style="success")
             )
           )
