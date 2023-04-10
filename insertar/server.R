@@ -85,7 +85,6 @@ shinyServer( #shinyServer
           group_by(across(c(input$escala[1]:input$escala[2], input$factor[1]:input$factor[2], input$fecha, input$name_long))) %>%
           summarise(n = dplyr::n(), .groups = "drop") %>%
           filter(n > 1L)
-        print(duplis)
         if(nrow(duplis) > 0){
           DT::datatable(duplis)
         }
@@ -465,30 +464,42 @@ shinyServer( #shinyServer
           for (filas in 1:nrow(df)){ # loop over all the rows of the input file loop#3_each_row
             # print(filas)
             if(input$subregistros==1 && input$fk_subr>0){ # enter if there are subregistries. if#3_there_are_subreg
-              if(df[filas,input$fk_subr]!=""){ # enter if the given row is a subregistry. if#4_subregistry_row
+              if(df[filas,which(colnames(df) == 
+                                colnames(inFile())[as.numeric(input$fk_subr)])]!=""){ # enter if the given row is a subregistry. if#4_subregistry_row
                 # gather data from the chosen experiment and corresponding date and time (if not empty)
                 # that is why subregistries should always come after registries in the spreadsheet
                 parentid.tmp<-dbGetQuery(db,paste0("select r.id_registro
                                                    from registro r 
                                                    where r.id_registro_padre=0 and r.fk_id_experimento=",
-                                                   id_ex," and r.fecha_registro='",df[filas,input$fecha],"'",
+                                                   id_ex," and r.fecha_registro='",df[filas,which(colnames(df) == 
+                                                                                                    colnames(inFile())[as.numeric(input$fecha)])],"'",
                                                    " and r.id_heading='",paste(id_factors_str[filas],id_levels_str[filas],id_scales_str[filas],sep = "."),"'",
-                                                   if(input$hora>0 && df[filas,input$hora]!=""){paste0(" and r.hora=",df[filas,input$hora])}))
+                                                   if(input$hora>0 && df[filas,which(colnames(df) == 
+                                                                                     colnames(inFile())[as.numeric(input$hora)])]!=""){paste0(" and r.hora=",df[filas,which(colnames(df) == 
+                                                                                                                                                                              colnames(inFile())[as.numeric(input$hora)])])}))
                 # save only registry id
                 parentid<-unique(parentid.tmp$id_registro)
                 # subset parent registry data from the input file
-                row_reg_csv<-df[df[,input$subr, drop=T]==df[filas,input$fk_subr, drop=T],]
+                row_reg_csv<-df[df[,which(colnames(df) == 
+                                            colnames(inFile())[as.numeric(input$subr)]), drop=T]==df[filas,which(colnames(df) == 
+                                                                                                                   colnames(inFile())[as.numeric(input$fk_subr)]), drop=T],]
                 # if more than two rows with same id in the csv, quit with warning
                 if (nrow(row_reg_csv)>1){
-                  stop(paste0("there are two or more registries with the same id: ",df[filas,input$fk_subr]))
+                  stop(paste0("there are two or more registries with the same id: ",df[filas,which(colnames(df) == 
+                                                                                                     colnames(inFile())[as.numeric(input$fk_subr)])]))
                 } else { #check_existence
                   # if no rows, quit with warning
                   if (nrow(row_reg_csv)==0){
-                    stop(paste0("there are no registries associated with the subregistry ",df[filas,input$fk_subr]))
+                    stop(paste0("there are no registries associated with the subregistry ",df[filas,which(colnames(df) == 
+                                                                                                            colnames(inFile())[as.numeric(input$fk_subr)])]))
                   } else { # check that parent info on the child row and parent info on the respective row match #check_match
-                    if(!all(df[filas, input$fecha] == row_reg_csv[,input$fecha],
+                    if(!all(df[filas, which(colnames(df) == 
+                                            colnames(inFile())[as.numeric(input$fecha)])] == row_reg_csv[,which(colnames(df) == 
+                                                                                                                colnames(inFile())[as.numeric(input$fecha)])],
                             if(input$hora>0){
-                              df[filas, input$hora] == row_reg_csv[,input$hora]
+                              df[filas, which(colnames(df) == 
+                                              colnames(inFile())[as.numeric(input$hora)])] == row_reg_csv[,which(colnames(df) == 
+                                                                                                                 colnames(inFile())[as.numeric(input$hora)])]
                             },
                             df[filas, orden_esc] == row_reg_csv[, orden_esc],
                             df[filas, orden_fac] == row_reg_csv[, orden_fac])){
@@ -499,30 +510,58 @@ shinyServer( #shinyServer
               } # if#4_subregistry_row
             } # end of if#3_there_are_subreg
             # gather data from the chosen experiment and corresponding date, and time, parent id(if not empty)
+            # print(df)
+            # print(paste0("SELECT r.id_registro from registro r
+            #                                  where r.fk_id_experimento=",
+            #              id_ex,
+            #              " and r.fecha_registro='",
+            #              df[filas,input$fecha],
+            #              "' and r.id_heading='",
+            #              paste(id_factors_str[filas],
+            #                    id_levels_str[filas],
+            #                    id_scales_str[filas],
+            #                    sep = "."),
+            #              "'",
+            #              if(input$hora>0 && df[filas,input$hora]!=""){
+            #                paste0(" and r.hora=",
+            #                       df[filas,input$hora])},
+            #              if(input$subregistros==1 && input$fk_subr>0 &&df[filas,input$fk_subr]!=""){
+            #                paste0(" and r.ref_hijo='",
+            #                       df[filas,input$id_fk_subr],
+            #                       "'")},
+            #              " and r.id_registro_padre=",
+            #              ifelse(input$subregistros==1 && input$fk_subr>0 &&df[filas,input$fk_subr]!="",
+            #                     parentid,
+            #                     0)))
             actualizar<-dbGetQuery(db,
                                    paste0("SELECT r.id_registro from registro r
                                              where r.fk_id_experimento=",
                                           id_ex,
                                           " and r.fecha_registro='",
-                                          df[filas,input$fecha],
+                                          df[filas,which(colnames(df) == 
+                                                           colnames(inFile())[as.numeric(input$fecha)])],
                                           "' and r.id_heading='",
                                           paste(id_factors_str[filas],
                                                 id_levels_str[filas],
                                                 id_scales_str[filas],
                                                 sep = "."),
                                           "'",
-                                          if(input$hora>0 && df[filas,input$hora]!=""){
+                                          if(input$hora>0 && df[filas,which(colnames(df) == 
+                                                                            colnames(inFile())[as.numeric(input$hora)])]!=""){
                                             paste0(" and r.hora=",
-                                                   df[filas,input$hora])},
-                                          if(input$subregistros==1 && input$fk_subr>0 &&df[filas,input$fk_subr]!=""){
+                                                   df[filas,which(colnames(df) == 
+                                                                    colnames(inFile())[as.numeric(input$hora)])])},
+                                          if(input$subregistros==1 && input$fk_subr>0 &&df[filas,which(colnames(df) == 
+                                                                                                       colnames(inFile())[as.numeric(input$fk_subr)])]!=""){
                                             paste0(" and r.ref_hijo='",
-                                                   df[filas,input$id_fk_subr],
+                                                   df[filas,input$which(colnames(df) == 
+                                                                          colnames(inFile())[as.numeric(input$id_fk_subr)])],
                                                    "'")},
                                           " and r.id_registro_padre=",
-                                          ifelse(input$subregistros==1 && input$fk_subr>0 &&df[filas,input$fk_subr]!="",
+                                          ifelse(input$subregistros==1 && input$fk_subr>0 &&df[filas,which(colnames(df) == 
+                                                                                                             colnames(inFile())[as.numeric(input$fk_subr)])]!="",
                                                  parentid,
                                                  0)))
-            
             # save only registry id
             idr<-unique(actualizar$id_registro)
             if(length(idr)>1){ # if more than one registry, exit
@@ -542,7 +581,8 @@ shinyServer( #shinyServer
                                                              colnames(inFile())[as.numeric(input$fecha)])]),
                                      ifelse(input$hora==0,
                                             "",
-                                            ifelse(nchar(df[filas, as.numeric(input$hora)])<5,
+                                            ifelse(nchar(df[filas, which(colnames(df) == 
+                                                                           colnames(inFile())[as.numeric(input$hora)])])<5,
                                                    ifelse(input$format=="wide",
                                                           df[filas, as.numeric(input$hora)],
                                                           df[fila, which(colnames(df) == 
@@ -647,6 +687,7 @@ shinyServer( #shinyServer
                 # loop over columns of dependent variables to extract their values
                 ronda <- 0
                 for (idtv in if(input$format=="wide"){input$check}else{input$check_long}){ # loop over reported data types #loop_tv2  
+                  # print(ronda)
                   ronda <- ronda + 1
                   if(input$format=="wide"){ 
                     num_slider<- ronda # which(input$check==idtv)
