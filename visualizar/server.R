@@ -56,6 +56,29 @@ shinyServer(
         DT::datatable(trae_obs_x_idex(paste(input$show_vars1, collapse=",")))}
     })
     
+    # table to show duplicated plots
+    output$duplicados <- renderDataTable({
+      if(length(input$show_vars1)>0){
+        DT::datatable(trae_escala() %>% filter(nombre_experimento %in% 
+                                                 (trae_exper() %>% 
+                                                    filter(id_experimento %in% input$show_vars1) %>%
+                                                    pull(nombre_experimento)) | 
+                                                 nombre_experimento.1 %in% 
+                                                 (trae_exper() %>% 
+                                                    filter(id_experimento %in% input$show_vars1) %>%
+                                                    pull(nombre_experimento))),
+                      options = list(
+                        paging = TRUE,
+                        searching = TRUE,
+                        scrollX=T,
+                        scrollY="600px",
+                        scrollCollapse=T,
+                        fixedHeader=T,
+                        autoWidth = TRUE,
+                        ordering = TRUE,
+                        dom = 'tB'))}
+    })
+    
     # reavtive event that stores the data to show on the main table 
     all<-eventReactive(list(input$show_vars1,input$range),{
       # inputs required
@@ -64,9 +87,29 @@ shinyServer(
       # if years are selected...
       if(input$range[2]>1000){
         # bring data
-        all1<-trae_todo(input$show_vars1,input$show_vars0,input$range[1]:input$range[2])
+        all1 <- trae_todo(input$show_vars1,input$show_vars0,input$range[1]:input$range[2])
+        # if(length(input$show_vars1) > 1){
+        #   if(((c(trae_escala() %>% 
+        #          pull(nombre_experimento) %>% 
+        #          unique(),
+        #          trae_escala() %>% 
+        #          pull(nombre_experimento.1) %>% 
+        #          unique()) %in%
+        #        (trae_ex_x_tv(paste(input$show_vars0, collapse=",")) %>% 
+        #         filter(id_experimento %in% input$show_vars1) %>% 
+        #         pull(nombre_experimento))) %>% 
+        #       sum()) > 1){
+        #     # bring ids of duplicated plots
+        #     no_quedan <- trae_compartidos()$fk_id_esc2
+        #     # exclude duplicated plots
+        #     all1 <- all1 %>% filter(!id_escala %in% no_quedan)
+        #   }
+        # }
         # and put it on the wide format
-        all2<-pivot_wider(all1,names_from="obs_escala", values_from = "nombre_escala")
+        all2<-pivot_wider(all1 %>%
+                            select(-id_escala),
+                          names_from="obs_escala", 
+                          values_from = "nombre_escala")
         all3<-pivot_wider(all2, names_from = "nombre_factor",values_from = "nombre_nivel")
         all<-pivot_wider(all3, names_from = "nombre_dato",values_from = "valor")
         all$anio<-as.numeric(substring(all$fecha_registro, 1, 4))
