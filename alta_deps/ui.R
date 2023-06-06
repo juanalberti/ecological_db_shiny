@@ -82,16 +82,16 @@ shinyUI(
                                                             textInput("name", "Name"),
                                                             conditionalPanel("input.tipo == 'With taxa'",
                                                                              radioButtons("sitaxa", "Type of living being", choices=trae_taxa_king()$kingdom, selected = character(0)),
-                                                                             autocomplete_input("div", "Division", options=NA),
-                                                                             autocomplete_input("fam", "Family", options=NA),
-                                                                             autocomplete_input("gen", "Genus", options=NA),
-                                                                             autocomplete_input("spec", "Species", options=NA),
-                                                                             autocomplete_input("var", "Variety", options=NA),
-                                                                             autocomplete_input("fdevida", "Life form", options=NA),
-                                                                             autocomplete_input("vida", "Life span", options=NA),
-                                                                             autocomplete_input("proven", "Provenance", options=NA),
-                                                                             # autocomplete_input("nlocal", "Local name", options=NA),
-                                                                             autocomplete_input("gf", "Functional group", options=NA)
+                                                                                          autocomplete_input("div", "Division/Phylum", options=NA),
+                                                                                          autocomplete_input("fam", "Family", options=NA),
+                                                                                          autocomplete_input("gen", "Genus", options=NA),
+                                                                                          autocomplete_input("spec", "Species", options=NA),
+                                                                                          autocomplete_input("var", "Variety", options=NA),
+                                                                                          autocomplete_input("fdevida", "Life form", options=NA),
+                                                                                          autocomplete_input("vida", "Life span", options=NA),
+                                                                                          autocomplete_input("proven", "Provenance", options=NA),
+                                                                                          # autocomplete_input("nlocal", "Local name", options=NA),
+                                                                                          autocomplete_input("gf", "Functional group", options=NA)
                                                             ),
                                                             conditionalPanel("input.tipo == 'Without taxa'",
                                                                              # radioButtons("notaxa", "Type of variable", choices=character(0),selected = character(0)),
@@ -118,7 +118,7 @@ shinyUI(
                                          )
                                        ),
                                        style = "info") # bscollapse to fill
-                       ) # primer bscollapse
+            ) # primer bscollapse
           ) # mainpanel
         ) # sidebarlayout
       ) # fluidpage  

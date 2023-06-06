@@ -1,8 +1,8 @@
-connect*
+conn*
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
 README.html
-connection.R
 index.html
+connection.R

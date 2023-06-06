@@ -88,7 +88,7 @@ shinyServer(function(input, output) {
   output$todo<-renderUI({
     if(nrow(all1)>0){
       output$todo1 <- renderPlotly({
-      ggplot(todo,aes(V1,as.numeric(as.character(num.tmp)),color=as.numeric(V1)))+
+      ggplot(todo,aes(V1,as.numeric(as.character(num.tmp)),fill=as.numeric(V1)))+
         geom_bar(stat="identity")+
         labs(x="Dependent variable (15 most common)",y="Amount of observations (rows)")+
         theme_cowplot()+
