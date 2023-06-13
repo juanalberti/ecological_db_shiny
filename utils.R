@@ -132,14 +132,6 @@ verifica_taxa_lifeform <- function (nombre) {
   return(data)
 }
 
-verifica_taxa_lifexp <- function (nombre) {
-  db <- conecta()
-  on.exit(dbDisconnect(db))
-  query <- sprintf("select id_lifexp from taxa_lifexp WHERE BINARY life_exp = '%s'", nombre)
-  data <- dbGetQuery(db, query)
-  return(data)
-}
-
 verifica_taxa_functgrp <- function (nombre) {
   db <- conecta()
   on.exit(dbDisconnect(db))
