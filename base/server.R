@@ -33,9 +33,9 @@ if(nrow(all1)>0){
     # spread(all3, key="nombre_dato",value = "valor")
   all$nombre_experimento<-iconv(all$nombre_experimento,from = "latin1")
   all$anio<-as.numeric(all$anio)
-  for (i in 1:length(na.omit(unique(all1$nombre_factor)))){
-    all[,unique(all1$nombre_factor)[i]]<-as.factor(all[,unique(all1$nombre_factor)[i]])
-  }
+  # for (i in 1:length(na.omit(unique(all1$nombre_factor)))){
+  #   all[,unique(all1$nombre_factor)[i]]<-all[,unique(all1$nombre_factor)[i]]
+  # }
   # rows per study 
   dxe<-all %>% group_by(nombre_experimento) %>% summarise(n = n())
     # aggregate(all[,1], list(exp=all$nombre_experimento), length)
