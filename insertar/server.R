@@ -9,7 +9,7 @@ library(schoolmath)
 require(readxl)
 require(readODS)
 library(tidyr)
-
+# library(tryCatchLog)
 
 # complementary file with functions
 source("../utils.R")
@@ -458,7 +458,7 @@ shinyServer( #shinyServer
           ins_reg<-0
           upd_val<-0
           
-          # creat process number to delete insertions upon request if there were insertions
+          # create process number to delete insertions upon request if there were insertions
           ii<-inserta_inserc(id_us,id_ex,id_resp, db)[1,1]
           # loop over rows to verify if data was previously inserted or not, and if not, insert it
           for (filas in 1:nrow(df)){ # loop over all the rows of the input file loop#3_each_row
@@ -562,14 +562,17 @@ shinyServer( #shinyServer
                                                                                                              colnames(inFile())[as.numeric(input$fk_subr)])]!="",
                                                  parentid,
                                                  0)))
+            # print(c("actualizar: ", actualizar))
             # save only registry id
             idr<-unique(actualizar$id_registro)
             if(length(idr)>1){ # if more than one registry, exit
               stop(paste0("row ",filas, " appears in two different registries"))
             }
             else { # one or no registry (should always be the case) else#4_<=1 id for the row analyzed
+              # print("entró pero no entró")
               # check that parent id obtained from db matches the one indicated in the csv
               if(length(idr)==0){ # if new registry #if_new_reg
+                # print("entró")
                 # first insert registry
                 ir<-inserta_registro(id_ex,
                                      id_ci,
@@ -596,7 +599,9 @@ shinyServer( #shinyServer
                                      ifelse(input$id_fk_subr>0 && df[filas,input$fk_subr]!="",as.character(df[filas,input$id_fk_subr]),""),
                                      paste(id_factors_str[filas],id_levels_str[filas],id_scales_str[filas],sep = "."),
                                      ii)[1,1]
+                # print(c("filas", filas))
                 # print(c("registro", ir))
+                
                 # increase registry counter
                 ins_reg<-ins_reg+1
                 
@@ -708,6 +713,7 @@ shinyServer( #shinyServer
                   })
                   df_obs<-data.frame(obs=unlist(observaciones))
                   for(dat_x_tv in col_slider$menor:col_slider$mayor){ # loop over columns of a given data type. #loop_dat_x_tv2
+                    # print(dat_x_tv)
                     iddat<-trae_id_dato(colnames(df)[dat_x_tv],db)$id_dato # fetch data column id
                     # brings the existing value of a given dependent variable, factor, level and scale from a given registry
                     registrado<-suppressWarnings(dbGetQuery(db,paste0( "select rv.valor from registro r
@@ -720,10 +726,13 @@ shinyServer( #shinyServer
                     datosXid<-unique(registrado$valor)
                     # value in the speardsheet
                     valor<-df[filas,dat_x_tv]
-                    
+                    # print(df[filas, ])
                     # insert if no previous value stored
                     if(length(datosXid)==0){ # enter if there was no value for that id #if_no_prev_data
-                      if(valor!=""){ # enter if cell is not empty #if_not_empty
+                      # print(paste0("entró, datosXid = ", datosXid))
+                      # print(paste0("valor: ", valor))
+                      if(valor!="" & !is.na(valor)){ # enter if cell is not empty #if_not_empty
+                        # print("entró")
                         for (column in orden_fac){ # loop to insert factor levels if needed #loop_niv
                           # bring factor id
                           id_fact<-trae_id_factor(colnames(df)[column],db)$id_factor
@@ -742,7 +751,7 @@ shinyServer( #shinyServer
                                                    id_nivel,db)
                           }
                         } # end of #loop_niv
-                        
+                        # print("salió loop_niv")
                         for(col3 in 1:length(as.numeric(input$escala)[1]:as.numeric(input$escala)[2])){ # loop to insert scale levels if needed #loop_sca
                           # fetch scale info for this registry
                           ire<-dbGetQuery(db,paste0("SELECT id_registro_escala FROM registro_escala
@@ -756,7 +765,7 @@ shinyServer( #shinyServer
                             }
                           }
                         } # end of #loop_sca
-                        
+                        # print("salió loop_sca")
                         # irxtd <- inserta_reg_x_td(idr, 
                         #                           ifelse(input$format=="long",idtv_long,idtv), 
                         #                           trae_tv() %>% filter(unidad_medida ==df_ums[ronda,1]) %>% pull(id_tipo_valor),
@@ -764,6 +773,25 @@ shinyServer( #shinyServer
                         
                         # insert the value
                         if(!is.na(df[filas,dat_x_tv])){
+                          # print("intentará insertar registro valor")
+                          # print(c("iddat", iddat))
+                          # print(c("valor: ", as.numeric(df[filas,dat_x_tv])))
+                          # print(trae_tv() %>% 
+                          #         filter(unidad_medida == ifelse(input$format=="long", 
+                          #                                        input$um_long, 
+                          #                                        df_ums[ronda,1])) %>% 
+                          #         pull(id_tipo_valor))
+                          # print(c("idr: ", idr))
+                          # print(ifelse(input$format=="long",idtv_long,idtv))
+                          # print(trae_obs_td(input$experimento, 
+                          #                   trae_tipo_dato() %>% 
+                          #                     filter(id_tipo_dato == ifelse(input$format=="long",idtv_long,idtv)) %>%
+                          #                     pull(nombre_tipo_dato)) %>% 
+                          #         filter(obs_tipo_dato == ifelse(input$format=="long",
+                          #                                        input$obs_long,
+                          #                                        df_obs[ronda, 1])) %>%
+                          #         pull(id_obs_tipo_dato))
+                          # print(c("ii", ii))
                           inserta_registro_valor(iddat,
                                                  as.numeric(df[filas,dat_x_tv]),
                                                  trae_tv() %>% 
@@ -801,7 +829,7 @@ shinyServer( #shinyServer
                           } # end of #stop_warning
                           else { #update_data
                             # update value
-                            update_ins(ifelse(valor!="",valor,'NULL'), ii, idr,iddat,
+                            update_ins(ifelse(valor!="" & !is.na(valor),valor,'NULL'), ii, idr,iddat,
                                        trae_tv() %>% filter(unidad_medida ==df_ums[ronda,1] %>% pull(id_tipo_valor)),
                                        ifelse(input$format=="long",idtv_long,idtv),db)
                             # update counter of updated values
