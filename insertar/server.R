@@ -580,7 +580,7 @@ shinyServer( #shinyServer
                                      id_us,
                                      ifelse(input$format=="wide", 
                                             as.character(df[filas,as.numeric(input$fecha)]),
-                                            df[fila, which(colnames(df) == 
+                                            df[filas, which(colnames(df) == 
                                                              colnames(inFile())[as.numeric(input$fecha)])]),
                                      ifelse(input$hora==0,
                                             "",
