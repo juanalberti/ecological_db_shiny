@@ -55,7 +55,7 @@ shinyServer( #shinyServer
           return(read.csv(input$file1$datapath, check.names = F,row.names = NULL))
         }else{
           if (suf %in% '.ods') {
-            return(read_ods(input$file1$datapath, sheet = input$sheetods))
+            return(read_ods(input$file1$datapath,  col_types =NA, sheet = input$sheetods))
           }
         }
       }
